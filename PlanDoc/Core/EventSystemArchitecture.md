@@ -10,11 +10,12 @@
 
 ### 2.1 分类总览
 
-| 分类 | 英文标识 | 触发方式 | 可重复性 | 典型示例 |
-|-----|---------|---------|---------|---------|
-| **随机事件** | `RANDOM` | 回合开始自动触发 | 否 | 暴雨、警察临检、捡到钱 |
-| **固定事件** | `FIXED` | 玩家主动选择执行 | 是/否配置 | 打工、读书、购买物品 |
-| **事件链** | `CHAIN` | 前置事件完成后触发 | 链内顺序执行 | 庇护申诉I→II→III |
+| 分类 | 英文标识 | 触发方式 | 可重复性 | 典型示例 | 场景限制 |
+|-----|---------|---------|---------|---------|---------|
+| **随机事件** | `RANDOM` | 回合开始自动触发 | 否 | 暴雨、警察临检、捡到钱 | 任意 |
+| **固定事件** | `FIXED` | 玩家主动选择执行 | 是/否配置 | 打工、读书、购买物品 | 任意 |
+| **事件链** | `CHAIN` | 前置事件完成后触发 | 链内顺序执行 | 庇护申诉I→II→III | 跨场景 |
+| **政策压力事件** | `POLICY_PRESSURE` | 回合开始（场景回合限制） | 通常1次 | 特朗普政策公告 | **仅场景3** |
 
 ### 2.2 随机事件（Random Event）
 
@@ -233,6 +234,172 @@ completionReward:
   END_SUCCESS: { 结局: '庇护通过，获得临时绿卡' }
   END_DEPORT: { 结局: '申请被拒，进入遣返程序' }
 ```
+
+### 2.5 政策压力事件（Policy Pressure Event）
+
+**定义**：**仅场景3存在**的特殊随机事件，模拟特朗普政府的移民政策变化，增加游戏压力。
+
+**核心特征**：
+- 🏛️ **场景专属**：仅在美国生存阶段（场景3）触发
+- 📅 **回合限制**：通过 `minSceneTurn` 控制最早触发时机（新手保护）
+- 📢 **固定格式**："唐纳德总统宣布XXX，这下移民局的搜查力度更大了"
+- 📈 **压力累积**：添加 `pressure` 类型的环境 Debuff（强度1-5）
+- ⏳ **自动衰减**：Debuff 持续时间归零后自动消失，新政策可添加新 Debuff
+
+**数据结构**：
+```typescript
+interface PolicyPressureEvent {
+  id: string;                      // 格式: act3_policy_{编号}
+  category: 'POLICY_PRESSURE';
+  name: string;
+  description: string;
+  
+  trigger: {
+    phase: 'TURN_START';
+    weight: number;                // 触发权重
+    maxTriggers: number;           // 通常设为1
+    cooldown: number;              // 触发后冷却回合
+    conditions?: SceneTurnCondition[];  // 场景回合限制
+  };
+  
+  scenes: ['act3'];                // 严格限定场景3
+  
+  content: {
+    announcement: string;          // 宣布内容（XXX部分）
+    displayText: string;           // 完整显示文本
+  };
+  
+  // 产生的环境 Debuff（替代原有的 pressureIncrease）
+  debuff: {
+    id: string;                    // Debuff ID
+    name: string;                  // Debuff 显示名称
+    type: 'pressure' | 'economic'; // Debuff 类型（压力或经济）
+    subtype?: string;              // 子类型（如 'usd_inflation'）
+    intensity: 1 | 2 | 3 | 4 | 5;  // 强度等级（1=轻微，5=极端）
+    duration: number;              // 持续回合数
+    effects: PressureDebuffEffect; // 具体效果
+    details?: InflationDetails;    // 经济型：分项通胀详情
+  };
+  
+  execute: (context: EventContext) => EventResult;
+}
+
+// 压力 Debuff 效果
+interface PressureDebuffEffect {
+  raidChanceIncrease?: number;      // 突击检查概率增加（0-1）
+  workDifficultyIncrease?: number;  // 打工难度增加值
+  mentalDamagePerTurn?: number;     // 每回合心理伤害
+  cashCostMultiplier?: number;      // 现金消耗倍率（如1.2表示+20%）
+  
+  // 经济型效果：分项通胀率
+  foodInflationRate?: number;       // 食品通胀率
+  lodgingInflationRate?: number;    // 住宿通胀率
+  transportInflationRate?: number;  // 出行通胀率
+}
+
+// 场景回合条件（仅用于 POLICY_PRESSURE）
+interface SceneTurnCondition {
+  type: 'SCENE';
+  value: 'act3';
+  minSceneTurn?: number;           // 场景最小回合（如第3回合后触发）
+  maxSceneTurn?: number;           // 场景最大回合（如前2回合触发）
+}
+```
+
+**示例**：
+```yaml
+# 场景3政策压力事件：加强边境安全
+id: act3_policy_001
+category: POLICY_PRESSURE
+name: 加强边境安全
+description: 唐纳德总统宣布加强边境安全和国家执法行动
+
+trigger:
+  phase: TURN_START
+  weight: 15
+  maxTriggers: 1
+  cooldown: 5
+  conditions:
+    - type: SCENE
+      value: act3
+      minSceneTurn: 3              # 第3回合后才可能触发（新手保护）
+
+scenes: [act3]
+
+content:
+  announcement: "加强边境安全和国家执法行动"
+  displayText: "唐纳德总统宣布加强边境安全和国家执法行动，这下移民局的搜查力度更大了。"
+
+# 产生的环境 Debuff
+debuff:
+  id: "debuff_act3_policy_001"
+  name: "移民搜捕升级"
+  type: "pressure"
+  intensity: 2                     # 强度等级 2（共5级）
+  duration: 3                      # 持续3回合
+  effects:
+    raidChanceIncrease: 0.15       # 突击检查+15%
+    workDifficultyIncrease: 10     # 打工难度+10
+    mentalDamagePerTurn: 2         # 每回合心理-2
+```
+
+**经济型 Debuff 示例**（分项通胀）：
+```yaml
+# 场景3通胀事件：油价危机
+id: rand3_oil_crisis
+category: RANDOM
+name: 油价危机
+description: 中东局势紧张导致油价飙升
+
+trigger:
+  phase: TURN_START
+  weight: 10
+  conditions:
+    - type: SCENE
+      value: act3
+
+scenes: [act3]
+
+content:
+  displayText: "加油站排起长队，油价一夜之间涨了40%。"
+
+# 产生的经济型 Debuff
+debuff:
+  id: "debuff_usd_inflation_transport"
+  name: "出行成本飙升"
+  type: "economic"
+  subtype: "usd_inflation"
+  intensity: 3
+  duration: -1                    # 永久（直到被调控事件降低）
+  effects:
+    transportInflationRate: 1.4   # 出行通胀+40%
+  # 分项详情（用于UI展示）
+  details:
+    food:
+      rate: 1.0                   # 食品不受影响
+      description: "食品价格稳定"
+    lodging:
+      rate: 1.0                   # 住宿暂时不受影响
+      description: "房租合同未到期"
+    transport:
+      rate: 1.4                   # 出行+40%
+      description: "油价暴涨，加满一箱油要多花$50"
+```
+
+**压力 Debuff 效果表**（基于 intensity 等级）：
+
+| 强度 | 状态名称 | 突击检查 | 打工难度 | 心理/回合 | 其他 |
+|-----|---------|---------|---------|----------|-----|
+| 1 | 【轻微关注】 | +5% | +5 | -1 | 无 |
+| 2 | 【搜捕升级】 | +15% | +10 | -2 | 无 |
+| 3 | 【风声鹤唳】 | +20% | +15 | -3 | 现金+10% |
+| 4 | 【全城搜捕】 | +30% | +20 | -4 | 现金+20%，庇护暂停 |
+| 5 | 【红色警戒】 | +50% | +30 | -6 | 现金+30%，无法稳定打工 |
+
+**Debuff 叠加规则**：
+- 多个压力 Debuff 同时存在时，效果**累加计算**
+- 例如：强度2（+15%检查）+ 强度3（+20%检查）= 总检查概率 +35%
+- UI 显示保留多个 Debuff，玩家清楚看到不同压力来源
 
 ---
 
@@ -619,9 +786,9 @@ event:
 
 ---
 
-## 8. 附录
+## 9. 附录
 
-### 8.1 属性标签列表
+### 9.1 属性标签列表
 
 | 标签 | 说明 | 典型道具 |
 |-----|------|---------|
@@ -640,7 +807,7 @@ event:
 | `membership` | 会员资格 | 健身月卡 |
 | `survival_gear` | 生存装备 | 睡袋、水袋 |
 
-### 8.2 事件ID命名规范
+### 9.2 事件ID命名规范
 
 | 类型 | 前缀 | 示例 |
 |-----|------|------|
@@ -651,9 +818,190 @@ event:
 | 场景2随机事件 | `rand2_` | `rand2_storm` |
 | 场景3随机事件 | `rand3_` | `rand3_account_banned` |
 | 通用随机事件 | `rand_` | `rand_lucky_money` |
+| 政策压力事件 | `act3_policy_` | `act3_policy_001` |
 | 事件链 | `chain_` | `chain_asylum` |
 | 链节点 | `{链ID}_{节点}` | `asylum_1_consult` |
 | 终结态事件 | `term1/2/3_` | `term3_emergency` |
+
+### 9.3 基础类型定义
+
+#### 9.3.1 事件分类枚举
+
+```typescript
+type EventCategory = 
+  | 'RANDOM'           // 随机事件
+  | 'FIXED'            // 固定事件
+  | 'CHAIN'            // 事件链
+  | 'POLICY_PRESSURE'; // 政策压力事件（仅场景3）
+```
+
+#### 9.3.2 条件类型
+
+```typescript
+type Condition = SceneCondition | AttributeCondition | ItemCondition;
+
+// 场景条件（支持场景回合限制）
+interface SceneCondition {
+  type: 'SCENE';
+  value: SceneId;                   // 'act1' | 'act2' | 'act3'
+  minSceneTurn?: number;            // 场景最小回合（可选）
+  maxSceneTurn?: number;            // 场景最大回合（可选）
+}
+
+// 属性条件
+interface AttributeCondition {
+  type: 'ATTRIBUTE';
+  attribute: keyof Attributes;      // 如 'physique', 'intelligence'
+  operator: '>=' | '<=' | '>' | '<' | '==';
+  value: number;
+}
+
+// 物品条件
+interface ItemCondition {
+  type: 'ITEM';
+  itemId?: string;                  // 特定物品ID
+  tag?: string;                     // 或物品标签
+  count?: number;                   // 数量要求（默认1）
+}
+```
+
+#### 9.3.3 事件上下文
+
+```typescript
+interface EventContext {
+  // 角色数据
+  character: Character;
+  
+  // 当前场景
+  currentScene: SceneId;
+  
+  // 当前回合
+  currentTurn: number;
+  sceneTurn: number;                // 当前场景回合
+  
+  // 事件池引用
+  eventPool: SceneEventPool;
+  
+  // 已匹配的槽位（仅FIXED事件）
+  equippedSlots?: EquippedSlots;
+  
+  // 场景3环境 Debuff 列表（用于POLICY_PRESSURE等事件读取/修改）
+  environmentalDebuffs?: EnvironmentalDebuff[];
+}
+```
+
+#### 9.3.4 事件结果
+
+```typescript
+interface EventResult {
+  success: boolean;                 // 是否成功执行
+  
+  // 资源变化
+  effects?: {
+    health?: number;
+    mental?: number;
+    money?: { cny?: number; usd?: number };
+    actionPoints?: number;
+  };
+  
+  // 属性变化
+  attributeChanges?: Partial<Attributes>;
+  
+  // 获得/失去物品
+  items?: {
+    gained?: { itemId: string; count: number }[];
+    lost?: { itemId: string; count: number }[];
+  };
+  
+  // 状态效果
+  statusEffects?: {
+    added?: TemporaryEffect[];
+    removed?: string[];             // 效果ID列表
+  };
+  
+  // 新增的环境 Debuff（政策事件等添加）
+  debuffsAdded?: EnvironmentalDebuff[];
+  
+  // 特殊结果
+  special?: {
+    gameOver?: boolean;             // 是否触发游戏结束
+    endingId?: string;              // 结局ID
+    sceneTransition?: SceneId;      // 场景切换
+    redirectEvent?: string;         // 重定向到另一事件
+  };
+  
+  // 失败原因（success为false时）
+  failureReason?: string;
+}
+```
+
+#### 9.3.5 环境 Debuff 定义
+
+```typescript
+// 环境 Debuff（外部压力统一使用此结构）
+interface EnvironmentalDebuff {
+  id: string;                       // Debuff 唯一标识
+  name: string;                     // 显示名称（如"移民搜捕升级"）
+  type: 'pressure' | 'economic' | 'weather' | 'social';  // Debuff 类型
+  subtype?: string;                 // 子类型（如 'cny_inflation', 'usd_inflation'）
+  intensity: 1 | 2 | 3 | 4 | 5;     // 强度等级（1=轻微，5=极端）
+  source: string;                   // 来源描述（如政策公告内容）
+  duration: number;                 // 剩余持续回合（0=即将消失，-1=永久）
+  effects: DebuffEffects;           // 具体效果
+  details?: InflationDetails;       // 经济型Debuff的分项详情（可选）
+}
+
+// 通胀详情（经济型Debuff使用）
+interface InflationDetails {
+  food: { rate: number; description: string; };      // 食品通胀率
+  lodging: { rate: number; description: string; };   // 住宿通胀率
+  transport: { rate: number; description: string; }; // 出行通胀率
+}
+
+// Debuff 效果（根据类型不同，效果字段不同）
+interface DebuffEffects {
+  // 压力型 Debuff 效果
+  raidChanceIncrease?: number;      // 突击检查概率增加（0-1）
+  workDifficultyIncrease?: number;  // 打工难度增加值
+  mentalDamagePerTurn?: number;     // 每回合心理伤害
+  
+  // 经济型 Debuff 效果（分项通胀，用于生活成本计算）
+  cashCostMultiplier?: number;      // 统一现金消耗倍率（旧版兼容）
+  
+  // 经济型：分项通胀率（推荐）
+  foodInflationRate?: number;       // 食品通胀率（如1.3 = +30%）
+  lodgingInflationRate?: number;    // 住宿通胀率
+  transportInflationRate?: number;  // 出行通胀率
+  
+  incomeMultiplier?: number;        // 收入倍率
+  
+  // 天气型 Debuff 效果
+  healthDamagePerTurn?: number;     // 每回合健康伤害
+  actionPointReduction?: number;    // 行动点减少
+  
+  // 社交型 Debuff 效果
+  socialEventWeightModifier?: number; // 社交事件权重调整
+}
+```
+
+#### 9.3.6 槽位匹配结果
+
+```typescript
+interface EquippedSlots {
+  [slotId: string]: {
+    slot: EventSlot;                // 槽位定义
+    item: PermanentItem;            // 选中的道具
+    alternatives: PermanentItem[];  // 其他可选道具
+  };
+}
+
+interface SlotMatchResult {
+  canExecute: boolean;              // 是否满足强制槽位要求
+  equippedSlots: EquippedSlots;     // 已匹配的槽位
+  totalEffects: SlotEffect;         // 累积的槽位效果
+  missingRequiredSlots: string[];   // 缺失的强制槽位ID
+}
+```
 
 ---
 

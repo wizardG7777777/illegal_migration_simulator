@@ -13,6 +13,7 @@ PlanDoc/DesignDocs/Events/
 ├── Events_Act2_Crossing.md   # 场景2事件：跨境穿越
 ├── Events_Act3_USA.md        # 场景3事件：美国生存
 ├── Events_Random.md          # 通用随机事件
+├── Events_RaidPressure.md    # 非法移民搜查压力事件（增加全局压力）
 ├── Events_Terminal.md        # 终结态事件（待补充）
 └── Events_Milestones.md      # 里程碑/关键转折点（待补充）
 ```
@@ -21,13 +22,13 @@ PlanDoc/DesignDocs/Events/
 
 ## 事件统计概览
 
-| 场景/类型 | 主动事件 | 随机事件 | 终结态事件 | 总计 |
-|----------|---------|---------|-----------|-----|
-| 场景1 | 12 | 8 | 6 | 26 |
-| 场景2 | 10 | 10 | 6 | 26 |
-| 场景3 | 14 | 10 | 6 | 30 |
-| 通用随机 | - | 20 | - | 20 |
-| **总计** | **36** | **48** | **18** | **102** |
+| 场景/类型 | 主动事件 | 随机事件 | 终结态事件 | 压力事件 | 总计 |
+|----------|---------|---------|-----------|---------|-----|
+| 场景1 | 12 | 8 | 6 | 3 | 29 |
+| 场景2 | 10 | 10 | 6 | 3 | 29 |
+| 场景3 | 14 | 10 | 6 | 3 | 33 |
+| 通用随机 | - | 20 | - | 6 | 26 |
+| **总计** | **36** | **48** | **18** | **15** | **117** |
 
 ---
 
@@ -402,6 +403,41 @@ function calculateEventStats(event, player) {
 | `vehicle_tesla` | `transport` | 0 | transport_slot | 行动点-1, 收入×1.3 |
 | `vehicle_scooter` | `transport` | 1 | transport_slot | 行动点-1, 收入×1.0 |
 | `phone_old` | `tool` | 5 | tool_slot | 随机事件+1, 行动点恢复+1 |
+
+---
+
+---
+
+## 非法移民搜查压力事件索引
+
+详见 [Events_RaidPressure.md](./Events_RaidPressure.md)
+
+### 压力增长设计
+
+| 压力等级 | 范围 | 描述 | 典型事件 |
+|---------|------|------|---------|
+| LOW | 0-30 | 风声不紧 | `raid_community_notice`, `raid_digital_trace` |
+| MEDIUM | 31-60 | 开始关注 | `raid_landlord_inquiry`, `raid_workplace_inspection` |
+| HIGH | 61-80 | 严查阶段 | `raid_identity_check`, `raid_sudden_inspection` |
+| CRITICAL | 81-100 | 大规模搜捕 | `raid_mass_operation`, `raid_betrayed` |
+
+### 场景特有压力事件
+
+| 场景 | 事件ID | 压力增加 | 说明 |
+|------|--------|---------|------|
+| act1 | `raid_police_tea` | +15 | 派出所约谈 |
+| act2 | `raid_guide_captured` | +20 | 向导被捕 |
+| act2 | `raid_border_patrol` | +15 | 边境巡逻加强 |
+| act3 | `raid_ice_raid` | +18 | ICE突袭工作场所 |
+| act3 | `raid_tipline` | +12 | 匿名举报威胁 |
+
+### 压力系统规则
+
+- **全局生效**：所有场景共享同一压力值
+- **单向增长**：只增不减，玩家无法主动降低
+- **自动增长**：每回合基础 +2，每20回合额外 +1
+- **事件触发**：特定随机事件额外增加压力
+- **难度缩放**：高压力时负面事件权重增加，正面事件权重降低
 
 ---
 
