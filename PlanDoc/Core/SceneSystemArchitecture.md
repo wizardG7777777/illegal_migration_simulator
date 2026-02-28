@@ -10,6 +10,7 @@
 - **从零开始**：场景切换时清空常驻道具栏，制造压迫感
 - **唯一保留**：全局书籍池跨场景保留，作为整局游戏的战略资源
 - **门槛与风险平衡**：走线门槛低但必须经历场景2高死亡率；直飞签证门槛高但跳过场景2
+- **黑户非终局**：签证逾期或失效转为黑户后，持续扣除心理健康（压力），但不直接导致游戏结束，玩家仍可继续游戏寻找转机
 
 ---
 
@@ -65,6 +66,39 @@ interface SceneRuntimeData {
   
   // 场景切换检定进度
   transitionProgress: TransitionProgress;
+  
+  // 【债务系统】场景内已触发的借贷事件记录
+  debtEventsTriggered: {
+    loanEventIds: Set<string>;      // 已触发的借贷事件ID
+    hasTakenLoan: boolean;          // 是否已借过贷（场景1）
+    hasTakenEmergencyLoan: boolean; // 是否使用过紧急借贷（场景2）
+  };
+}
+
+// 【债务系统】跨场景数据传输结构
+// 注：Debt 类型定义详见 DebtSystemArchitecture.md
+interface CrossSceneData {
+  // 书籍池（全局唯一，必须保留）
+  bookPool: Book[];
+  
+  // 进行中的跨场景事件链
+  crossSceneChains: ChainProgress[];
+  
+  // 关键剧情道具
+  keyItems: string[];
+  
+  // 累计统计
+  accumulatedStats: AccumulatedStats;
+  
+  // 【债务系统】跨场景债务（仅场景2债务不清零）
+  carriedDebt?: Debt[];  // 从场景2带入场景3的债务
+}
+
+// 累计统计结构
+interface AccumulatedStats {
+  totalTurns: number;
+  moneySpent: number;
+  eventsCompleted: number;
 }
 ```
 
@@ -82,7 +116,11 @@ interface Act1State {
   departureReadiness: number;
   
   // 已探索的离境方式
+  // 注：tourist_visa 需要通过【灵光一闪】事件解锁（智力≥7触发）
   discoveredMethods: DepartureMethod[];
+  
+  // 灵光一闪触发标记
+  hasInsightTriggered: boolean;  // 是否已触发灵光一闪
   
   // 人脉网络建立情况
   networkEstablished: {
@@ -93,41 +131,68 @@ interface Act1State {
   
   // 特殊标记：是否触发过直达场景3的事件
   hasSkippedToAct3: boolean;
+  
+  // 【债务系统】场景1借贷状态
+  hasTakenLoan: boolean;         // 是否已借过贷
+  loanAmount: number;            // 借贷总额（人民币）
 }
 
 type DepartureMethod = 'flight' | 'land_crossing' | 'student_visa' | 'tourist_visa' | 'asylum';
 
 // 场景2：跨境穿越阶段
+// 
+// 【新设计】两阶段结构：
+// - 阶段1（雨林）：进度 0-4 步，每回合强制负面事件，选择向导带路或独自穿越
+// - 阶段2（边境小镇）：进度 = 5，进行小镇活动，选择穿越方式
+//
+// 【法律真空】环境压力：南美雨林与边境地区缺乏法律保障，每回合强制遭遇危险事件
 interface Act2State {
-  // 当前路线阶段
-  routeStage: RouteStage;
+  // 当前阶段标识
+  currentPhase: 'rainforest' | 'border_town';
   
-  // 同伴状态
-  companions: CompanionState[];
+  // 雨林进度（0-4步，第5步进入边境小镇）
+  // UI展示："第 X 步 / 共 5 步" + 进度条 + 足迹标记
+  progress: number;
   
-  // 路线选择
-  routeChoice: 'northern' | 'southern' | 'coastal' | null;
+  // 是否雇佣向导（阶段1）
+  // - 每回合开始时自动扣除$50向导费
+  // - 回合结束时自动前进1步
+  // - 现金不足时无法选择向导带路
+  hasGuide: boolean;
   
-  // 物资储备
+  // 是否已获得货车司机联系（阶段2）
+  // - 在小镇花费$200获得
+  // - 持有后可选择货车偷渡穿越方式
+  hasBorderGuide: boolean;
+  
+  // 物资储备（场景2起始时给予基础物资）
   supplyStatus: {
     water: number;               // 水量（天数）
     food: number;                // 食物（天数）
     shelter: boolean;            // 是否有遮蔽
   };
   
-  // 遭遇记录（避免重复遭遇同一事件）
+  // 已选择的穿越方式（阶段2选择后记录，用于结局标记）
+  selectedCrossingMethod?: 'truck' | 'desert' | 'climb';
+  
+  // 遭遇记录（避免重复遭遇同一事件，可选）
   encounteredDangers: Set<string>;
+  
+  // 【债务系统】场景2借贷状态
+  hasTakenEmergencyLoan: boolean;  // 是否使用过紧急借贷
+  emergencyLoanAmount: number;     // 紧急借贷金额（美元）
 }
 
-type RouteStage = 'preparation' | 'departure' | 'journey' | 'border_approach' | 'crossing';
-
-interface CompanionState {
-  id: string;
-  name: string;
-  trust: number;                 // 信任度（0-100）
-  status: 'healthy' | 'injured' | 'separated' | 'dead';
-  hasEssentialSkill: boolean;    // 是否有关键技能（向导/翻译/医疗）
-}
+// 场景2核心机制说明（新设计）：
+// 1. 【法律真空】环境压力：每回合强制触发负面事件（6种类型）
+// 2. 向导带路 vs 独自穿越：
+//    - 向导：每回合$50，自动前进1步，100%成功
+//    - 独自：生存能力判定（≥4），成功前进1步，失败原地不动
+// 3. 阶段2穿越方式：
+//    - 货车偷渡：需hasBorderGuide（$200），自动成功
+//    - 沙漠缺口：生存能力≥8判定，失败即死亡
+//    - 攀爬边境墙：体魄≥12判定，失败即死亡
+// 4. 预期回合：阶段1约5-10回合，阶段2约3-5回合，总计5-15回合
 
 // 场景3：美国生存阶段
 interface Act3State {
@@ -186,7 +251,11 @@ interface Act3State {
   };
   
   // 故事标记（记录玩家的选择路径）
-  storyFlags: Set<string>;       // 如 'gap_crosser', 'wall_climber', 'miracle_survivor'
+  storyFlags: Set<string>;       // 记录玩家关键剧情选择
+  
+  // 【债务系统】场景3债务追踪
+  debtDefaultCount: number;          // 违约次数计数
+  hasDebtWarningTriggered: boolean;  // 是否已触发第一次警告
 }
 
 type IdentityStatus = 
@@ -335,145 +404,215 @@ const SCENE_TRANSITIONS: Record<string, TransitionCheck> = {
     }
   },
   
-  // 场景1 → 场景3：旅游签证（高门槛，合法入境）
+  // 场景1 → 场景3：旅游签证（通过【灵光一闪】解锁，高门槛，合法入境）
+  // 
+  // 【完整流程】：
+  // 1. 触发灵光一闪（智力≥7）：解锁签证材料获取途径
+  // 2. 收集三样必须物品：
+  //    - 足额的资产证明（通过开具资产证明事件或中介）
+  //    - 去美国的理由（通过刷抖音触发泰勒演唱会事件或中介）
+  //    - 行程计划（通过DIY行程事件或中介）
+  // 3. 大使馆面签（需要英语≥8，三样物品齐全）
+  // 4. 面签成功后解锁此场景切换
+  //
+  // 【成本分析】：
+  // - 资产证明：5000元（伪造）或30万存款
+  // - 去美理由：5000元（中介）或免费（刷抖音概率触发）
+  // - 行程计划：5000元（中介）或5行动点DIY
+  // - 签证申请费：1600元
+  // 总成本：至少15000人民币（如果全部用中介）
+  //
+  // 【风险】：使用虚假材料面签有30%概率被发现，导致永久黑名单
+  //
+  // 注意：具体的面签逻辑在固定事件 act1_visa_interview 中处理，
+  // 此配置仅在面签成功后启用场景切换。
   'act1_to_act3_tourist': {
     from: 'act1',
     to: 'act3',
-    method: 'attribute_check',      // 面签检定
+    method: 'event_unlocked',       // 由面签事件解锁
     baseCost: {
-      actionPoints: 2,
-      money: 3000,                  // 中介/材料费
+      actionPoints: 0,              // 面签时已支付费用
+      money: 0,
       health: 0,
-      mental: 15
+      mental: 0
     },
     requirements: [
       { 
-        type: 'ITEM', 
-        config: { itemTag: 'document' }  // 需要假材料/证明
+        type: 'FLAG', 
+        config: { flag: 'visa_interview_passed' }  // 必须通过面签
       },
       { 
         type: 'ATTRIBUTE', 
-        config: { attribute: 'intelligence', minValue: 6 }  // 或高智力
+        config: { attribute: 'english', minValue: 8 }  // 英语≥8是硬性要求（更高门槛）
       }
     ],
     failureConsequence: {
-      moneyLoss: 3000,              // 材料费损失
+      moneyLoss: 0,
       healthLoss: 0,
-      cooldown: 10,                 // 10回合后才能再次申请
-      specialDebuff: '签证黑名单'    // 获得debuff，无法再申请
+      cooldown: 0
     }
   },
   
-  // 场景1 → 场景3：学生签证（灰色野鸡大学，合法入境但需持续付费）
+  // 场景1 → 场景3：学生签证（灰色野鸡大学，社交≥5解锁，合法入境但需持续付费）
+  //
+  // 【触发条件】：社交≥5时解锁学生签证事件链
+  //
+  // 【事件链流程】：
+  // 1. 联系中介（社交≥5解锁）
+  // 2. 提交申请（支付定金20000人民币）
+  // 3. 面试（100%获得通过，无需检定）
+  // 4. 获得签证，准备离境（支付剩余10000人民币尾款，或无法支付则无法离境）
+  //
+  // 【成本分析】：
+  // - 场景1阶段：20000人民币定金 + 10000人民币尾款（入境时支付，约$1389）
+  // - 场景3阶段：共4期学费，每期$4000（每6回合1次）
+  // 总成本：30000人民币 + $16000美元 ≈ 15.8万人民币（按7.2汇率）
+  //
+  // 【优势】：
+  // - 100%通过面试，无失败风险
+  // - 可以分期付款，减轻场景1资金压力
+  // - 稳定合法入境，跳过危险的场景2
+  //
+  // 【劣势】：
+  // - 总成本高于旅游签
+  // - 场景3有持续学费压力
+  // - 需要较高的社交能力才能解锁
   'act1_to_act3_student': {
     from: 'act1',
     to: 'act3',
     method: 'chain_completion',     // 完成事件链
     baseCost: {
       actionPoints: 2,
-      money: 50000,                 // 首期学费（人民币）
+      money: 20000,                 // 场景1只需支付定金20000人民币
       health: 0,
       mental: 10
     },
     requirements: [
-      { type: 'MONEY', config: { amount: 50000 } },
       { 
-        type: 'ITEM', 
-        config: { itemTag: 'document' }  // 假学历
+        type: 'ATTRIBUTE',
+        config: { attribute: 'social', minValue: 5 }  // 社交≥5解锁学签事件链
       },
+      { type: 'MONEY', config: { amount: 20000 } },   // 定金20000
       { 
         type: 'CHAIN_COMPLETED', 
-        config: { chainId: 'act1_visa_student' }  // 完成申请链
+        config: { chainId: 'act1_visa_student' }      // 完成学签申请链
       }
     ],
     failureConsequence: {
-      moneyLoss: 0,                 // 学费不退
+      moneyLoss: 0,
       healthLoss: 0,
       cooldown: 0
     },
-    // 特殊：学生签进入场景3后，每15回合需缴纳$4000学费维持身份
+    // 分期付款机制：场景1支付定金20000，尾款10000在场景3入境时支付
+    installmentPayment: {
+      act1Payment: 20000,           // 场景1已支付定金
+      act3PaymentOnArrival: 10000,  // 场景3入境时立即支付尾款（美元换算约$1389，付给中介）
+      currencyOnArrival: 'USD',
+      failureOnArrival: '无法入学，转为旅游签倒计时或直接黑户'
+    },
+    // 特殊：学生签进入场景3后，总共需缴纳4期学费，每6回合收取一次
+    // 第1-4期：每6回合收取$4000（标准学费），不缴纳则身份失效
     ongoingCost: {
-      interval: 15,                 // 15回合
+      interval: 6,                  // 每6回合收取一次
       amount: 4000,                 // $4000
       currency: 'USD',
-      failureResult: '身份失效'      // 不交钱则转为非法滞留
+      maxCharges: 4,                // 总共收取4期学费
+      totalChargesDescription: '学费总计4期，每6回合缴纳1期，每期$4000',
+      failureResult: '身份失效转为黑户（持续扣除心理健康，不直接导致游戏结束）'
     }
   },
   
-  // 场景2 → 场景3：向导带路（安全但需付费）
-  'act2_to_act3_guide': {
+  // ============================================
+  // 场景2 → 场景3：穿越边境墙（三种方式）
+  // ============================================
+  //
+  // 【新设计】阶段2（边境小镇）选择穿越方式：
+  // - 必须在小镇完成活动后才能选择
+  // - 三种方式满足不同属性优势的玩家
+  // - 无向导穿越失败即死亡
+  
+  // 方式A：货车偷渡（最安全，需提前准备）
+  'act2_to_act3_truck': {
+    from: 'act2',
+    to: 'act3',
+    method: 'direct_purchase',      // 直接购买，无需检定
+    baseCost: {
+      actionPoints: 2,
+      money: 0,                     // 费用已在获取border_guide时支付（$200）
+      health: 5,                    // 长时间蜷缩的身体不适
+      mental: 10                    // 密闭空间的恐惧
+    },
+    requirements: [
+      { 
+        type: 'ITEM', 
+        config: { itemId: 'border_guide' }  // 需要在小镇花费$200获得
+      }
+    ],
+    failureConsequence: {
+      moneyLoss: 0,
+      healthLoss: 0,
+      cooldown: 0                   // 不会失败
+    },
+    // 结果：成功进入场景3，保留大部分现金
+    description: '向导带你来到货运停车场，你钻进货柜的隐藏空间。明天早上到洛杉矶卸货，你从里面出来就行。'
+  },
+  
+  // 方式B：穿越沙漠缺口（极高风险，穷人最desperate的选择）
+  'act2_to_act3_desert': {
     from: 'act2',
     to: 'act3',
     method: 'attribute_check',
     baseCost: {
       actionPoints: 3,
-      money: 500,                   // 向导费（美元）
+      money: 0,
       health: 10,
-      mental: 10
-    },
-    requirements: [
-      { 
-        type: 'ITEM', 
-        config: { itemTag: 'guide' }  // 需要向导道具
-      },
-      { type: 'MONEY', config: { amount: 500 } }
-    ],
-    failureConsequence: {
-      moneyLoss: 500,               // 向导费损失
-      healthLoss: 20,               // 受伤
-      cooldown: 3                   // 3回合后重试
-    }
-  },
-  
-  // 场景2 → 场景3：寻找漏洞（无向导，失败即死亡）
-  'act2_to_act3_gap': {
-    from: 'act2',
-    to: 'act3',
-    method: 'attribute_check',
-    baseCost: {
-      actionPoints: 4,
-      money: 0,
-      health: 15,
-      mental: 20
-    },
-    requirements: [
-      { 
-        type: 'EVENT_TRIGGERED', 
-        config: { eventId: 'act2_gap_discovered' }  // 必须先发现漏洞
-      }
-    ],
-    failureConsequence: {
-      moneyLoss: 0,
-      healthLoss: 999,              // 【游戏结束】死亡
-      cooldown: 0,
-      gameOver: true,               // 标记为游戏结束
-      gameOverReason: '被边境巡逻队射杀/陷入偷猎者陷阱失血死亡'
-    }
-  },
-  
-  // 场景2 → 场景3：直接攀爬（无向导，失败即死亡）
-  'act2_to_act3_climb': {
-    from: 'act2',
-    to: 'act3',
-    method: 'attribute_check',
-    baseCost: {
-      actionPoints: 4,
-      money: 0,
-      health: 20,
       mental: 15
     },
     requirements: [
       { 
         type: 'ATTRIBUTE', 
-        config: { attribute: 'physique', minValue: 12 }  // 高体魄要求
+        config: { attribute: 'survival', minValue: 8 }  // 生存能力≥8
       }
     ],
     failureConsequence: {
       moneyLoss: 0,
       healthLoss: 999,              // 【游戏结束】死亡
       cooldown: 0,
-      gameOver: true,               // 标记为游戏结束
-      gameOverReason: '从边境墙摔落死亡/被刺网割破动脉失血死亡'
+      gameOver: true,
+      gameOverReason: '第三天你倒在沙地上，喉咙像塞了一把烧红的刀子。最后的意识里，你听到风吹过边境墙的声音——那么近，又那么远。',
+      endingId: 'death_desert_crossing'
+    },
+    // 成功结果：现金-20%（用于购买食物和水），进入场景3
+    successResult: {
+      moneyMultiplier: 0.8,         // 现金剩余80%
+      description: '凭借求生本能和运气，你在沙漠中找到水源，艰难跋涉后抵达公路。被路过的好心人发现，送上通往加州的大巴。'
+    }
+  },
+  
+  // 方式C：攀爬边境墙（高体魄要求，失败即死）
+  'act2_to_act3_climb': {
+    from: 'act2',
+    to: 'act3',
+    method: 'attribute_check',
+    baseCost: {
+      actionPoints: 3,
+      money: 0,
+      health: 20,                   // 钢柱烫手灼伤+跳下时的磕碰伤
+      mental: 10
+    },
+    requirements: [
+      { 
+        type: 'ATTRIBUTE', 
+        config: { attribute: 'physique', minValue: 12 }  // 体魄≥12（原设计≥10，新设计≥12）
+      }
+    ],
+    failureConsequence: {
+      moneyLoss: 0,
+      healthLoss: 999,              // 【游戏结束】死亡
+      cooldown: 0,
+      gameOver: true,
+      gameOverReason: '你攀上了墙顶，但体力已经耗尽。手指一滑，身体向后仰去。视野迅速变黑，最后的意识是身下的温热——那是你自己的血。',
+      endingId: 'death_wall_fall'
     }
   },
   
@@ -597,26 +736,74 @@ class SceneTransitionManager {
     // 3. 【核心】完全清空常驻道具栏
     this.character.inventory.permanents.clear();
     
-    // 4. 清空当前场景的事件池
+    // 4. 【债务系统】处理债务跨场景逻辑
+    this.handleDebtTransition(from, to, crossSceneData);
+    
+    // 5. 清空当前场景的事件池
     this.sceneManager.clearCurrentPool();
     
-    // 5. 加载新场景
+    // 6. 加载新场景
     this.sceneManager.loadScene(to);
     
-    // 6. 初始化新场景状态
+    // 7. 初始化新场景状态
     this.initializeSceneState(to);
     
-    // 7. 根据切换路径给予对应的启动物资
+    // 8. 根据切换路径给予对应的启动物资
     this.giveStarterKitByTransitionType(to, from, transitionType);
     
-    // 8. 恢复跨场景数据
+    // 9. 恢复跨场景数据
     this.restoreCrossSceneData(crossSceneData);
     
-    // 9. 更新角色当前场景
+    // 10. 更新角色当前场景
     this.character.status.currentScene = to;
     
-    // 10. 触发场景进入事件
+    // 11. 触发场景进入事件
     this.triggerSceneEntryEvent(to, transitionType);
+  }
+  
+  /**
+   * 【债务系统】处理场景切换时的债务逻辑
+   * @param from 源场景
+   * @param to 目标场景
+   * @param crossSceneData 跨场景数据
+   */
+  private handleDebtTransition(from: SceneId, to: SceneId, crossSceneData: CrossSceneData): void {
+    switch (from) {
+      case 'act1':
+        // 场景1→2：清空债务，显示叙事提示
+        if (this.character.debtSystem.activeDebts.length > 0) {
+          const debtAmount = this.character.debtSystem.activeDebts
+            .reduce((sum, d) => sum + d.amount, 0);
+          log(`你离开了中国，国内的债务问题暂时搁置。你欠下的${debtAmount}元债务成了遥远的回声。`);
+          
+          // 清空债务系统
+          this.character.debtSystem.activeDebts = [];
+          this.character.debtSystem.totalDebt = 0;
+          
+          // 清空违约历史和当前违约状态
+          this.character.debtSystem.defaultHistory = { count: 0 };
+          this.character.debtSystem.currentDefault = { isInDefault: false, consecutiveMissed: 0 };
+          
+          // 设置债务放弃标记
+          this.character.flags.add('debts_abandoned_act1');
+        }
+        break;
+        
+      case 'act2':
+        // 场景2→3：保留债务到跨场景数据，在恢复时加载
+        if (this.character.debtSystem.activeDebts.length > 0) {
+          const debtAmount = this.character.debtSystem.activeDebts
+            .reduce((sum, d) => sum + d.amount, 0);
+          log(`你带着${debtAmount}美元的债务进入了美国。蛇头的债，是跨国界的。`);
+          
+          // 债务已保存在 crossSceneData.carriedDebt 中
+          // 将在 restoreCrossSceneData 中恢复
+        }
+        break;
+        
+      default:
+        break;
+    }
   }
   
   /**
@@ -632,18 +819,47 @@ class SceneTransitionManager {
           this.character.inventory.permanents.addItem(ItemDatabase.getPermanent('hotel_booking'));
           this.character.status.identityStatus = 'tourist_visa';
           this.character.status.visaExpiry = 6;  // 6回合签证倒计时
+          // 签证到期后转为黑户，不直接游戏结束，但持续扣除心理健康
+          this.character.status.onVisaExpiry = {
+            newIdentity: 'undocumented',           // 转为非法滞留
+            mentalDecay: 3,                        // 每回合-3心理健康（黑户压力）
+            gameOverOnExpiry: false                // 不直接导致游戏结束
+          };
           break;
           
         case 'student':
-          // 学生签直飞（野鸡大学）
-          this.character.resources.money.usd = 1000 + Math.random() * 2000;
+          // 学生签直飞（野鸡大学）- 初始资金比旅游签少，因为学费花掉了大部分
+          this.character.resources.money.usd = 800 + Math.random() * 1200;  // $800-2000
           this.character.inventory.permanents.addItem(ItemDatabase.getPermanent('dorm_key'));
           this.character.status.identityStatus = 'student_visa';
+          
+          // 检查是否有分期付款尾款（付给中介）
+          if (this.character.flags.student_visa_installment) {
+            const remainingUSD = Math.ceil(10000 / 7.2);  // 约$1389人民币换算
+            if (this.character.resources.money.usd >= remainingUSD) {
+              this.character.resources.money.usd -= remainingUSD;
+              log("你支付了中介尾款$" + remainingUSD + "，成功注册入学。");
+            } else {
+              log("警告：你无法支付中介尾款，学校不允许你注册！");
+              log("你的学生签证失效，转为非法滞留（黑户）。");
+              this.character.status.identityStatus = 'undocumented';
+              // 转为黑户后持续扣除心理健康，但不直接游戏结束
+              this.character.status.mentalDecay = 4;  // 黑户压力每回合-4
+            }
+          }
+          
+          // 学签持续学费：总共4期，每期$4000，每6回合收取1次
           this.character.status.ongoingCost = {
-            interval: 15,
-            amount: 4000,
+            interval: 6,                  // 每6回合
+            amount: 4000,                 // $4000
             currency: 'USD',
-            description: '野鸡大学学费（不缴纳则身份失效）'
+            chargesRemaining: 4,          // 总共4期要交
+            description: '野鸡大学学费（第1-4期，每期$4000，不缴纳则身份失效转为黑户）',
+            onPaymentFailure: {
+              newIdentity: 'undocumented',
+              mentalDecay: 4,             // 不交学费变黑户，每回合-4心理健康
+              gameOver: false             // 不直接导致游戏结束
+            }
           };
           break;
           
@@ -658,14 +874,14 @@ class SceneTransitionManager {
           // 走线+漏洞
           this.character.resources.money.usd = 300 + Math.random() * 700;
           this.character.status.identityStatus = 'undocumented';
-          this.character.status.storyFlags.add('gap_crosser');
+          // 漏洞穿越进入场景3
           break;
           
         case 'climb':
           // 走线+攀爬
           this.character.resources.money.usd = 300 + Math.random() * 700;
           this.character.status.identityStatus = 'undocumented';
-          this.character.status.storyFlags.add('wall_climber');
+          // 攀爬边境墙进入场景3
           // 攀爬可能受伤
           this.character.resources.health.current -= 20;
           break;
@@ -674,7 +890,7 @@ class SceneTransitionManager {
           // 随机奇迹
           this.character.resources.money.usd = Math.random() * 500;
           this.character.status.identityStatus = 'unknown';
-          this.character.status.storyFlags.add('miracle_survivor');
+          // 奇迹事件进入场景3
           break;
           
         default:
@@ -714,7 +930,12 @@ class SceneTransitionManager {
         totalTurns: this.character.status.turnCount.total,
         moneySpent: this.character.statistics.moneySpent,
         eventsCompleted: this.character.statistics.eventsCompleted
-      }
+      },
+      
+      // 【债务系统】跨场景债务（仅场景2→3保留）
+      carriedDebt: this.character.status.currentScene === 'act2' 
+        ? this.character.debtSystem.activeDebts 
+        : undefined
     };
   }
   
@@ -734,6 +955,13 @@ class SceneTransitionManager {
       if (itemData) {
         this.character.inventory.permanents.addItem(itemData);
       }
+    }
+    
+    // 【债务系统】恢复场景2带入场景3的债务
+    if (data.carriedDebt && data.carriedDebt.length > 0) {
+      this.character.debtSystem.activeDebts = data.carriedDebt;
+      this.character.debtSystem.totalDebt = data.carriedDebt
+        .reduce((sum, d) => sum + d.amount, 0);
     }
   }
   
@@ -1853,7 +2081,7 @@ function serializeSceneData(manager: SceneManager): SceneSaveData {
 │   场景1状态   │ │   场景2状态   │ │   场景3状态   │ │   Pool       │
 ├──────────────┤ ├──────────────┤ ├──────────────┤ ├──────────────┤
 │departure     │ │routeStage    │ │identityStatus│ │randomPool    │
-│readiness     │ │companions    │ │applications  │ │fixedPool     │
+│readiness     │ │currentPhase  │ │applications  │ │fixedPool     │
 │network       │ │routeChoice   │ │incomeSources │ │chainPool     │
 └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘
         │            │            │            │
@@ -1935,10 +2163,11 @@ const SCENE_CONFIGS: Record<SceneId, SceneConfig> = {
     currency: 'USD',
     environmentalDebuff: DEBUFF_ACT3_CRACKDOWN,
     // 场景3起始包根据切换路径不同而变化：
-    // - 走线+向导: $200-800, 无道具, 非法入境
-    // - 走线+漏洞/攀爬: $300-1000, 无道具, 非法入境, 特殊标记
-    // - 旅游签直飞: $2000-5000, 旅馆预订, 合法入境(6回合倒计时)
-    // - 学生签直飞: $1000-3000, 宿舍钥匙, 合法入学(需每15回合交$4000学费)
+    // - 走线+货车偷渡: $200-800, 无道具, 非法入境（最安全）
+    // - 走线+沙漠缺口: $300-1000, 无道具, 非法入境, 起始地点加州（高风险，靠生存能力）
+    // - 走线+攀爬边境墙: $300-1000, 无道具, 非法入境, 健康-20（钢柱灼伤+磕碰伤）
+    // - 旅游签直飞: $2000-5000, 旅馆预订, 合法6回合,逾期转黑户(-3SAN/回合)
+    // - 学生签直飞: $800-2000, 宿舍钥匙, 合法入学(4期学费每6回合$4000,逾期转黑户(-4SAN/回合)
     // - 随机奇迹: $0-500, 无道具, 神秘身份
     starterKit: {
       consumables: [],
@@ -2053,7 +2282,7 @@ if (transition.failureConsequence.gameOver) {
 - 经历场景
 - 触发事件数
 - 最终资源状态
-- 故事标记（如'gap_crosser'、'wall_climber'等）
+- 关键剧情选择记录
 - 死亡地点/通关方式
 
 ### 8.4 调试工具
@@ -2096,4 +2325,6 @@ namespace SceneDebug {
 | 版本 | 日期 | 更新内容 |
 |-----|------|---------|
 | v1.1 | 2026-02-26 | 添加场景1→3直飞路径、场景2→3多路径（向导/漏洞/攀爬/随机）、游戏结束机制、野鸡大学持续成本 |
+| v1.0 | 2026-02-26 | 初始版本 |
+�持续成本 |
 | v1.0 | 2026-02-26 | 初始版本 |

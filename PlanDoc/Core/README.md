@@ -6,10 +6,12 @@
 
 | 文档 | 说明 | 状态 |
 |-----|------|------|
+| [GameConfigArchitecture.md](./GameConfigArchitecture.md) | 游戏配置中心（统一配置管理、热重载、调试面板） | ✅ 已完成 |
 | [CharacterSystemArchitecture.md](./CharacterSystemArchitecture.md) | 角色系统架构（属性、资源、终结态） | ✅ 已完成 |
 | [EventSystemArchitecture.md](./EventSystemArchitecture.md) | 事件系统架构（分类、触发、事件链） | ✅ 已完成 |
 | [ItemSystemArchitecture.md](./ItemSystemArchitecture.md) | 物品系统架构（消耗品、常驻品、槽位匹配） | ✅ 已完成 |
 | [SceneSystemArchitecture.md](./SceneSystemArchitecture.md) | 场景系统架构（三幕结构、切换、生活成本） | ✅ 已完成 |
+| [DebtSystemArchitecture.md](./DebtSystemArchitecture.md) | 债务系统架构（借贷、还款、违约惩罚） | ✅ 已完成 |
 | [SaveSystemArchitecture.md](./SaveSystemArchitecture.md) | 存档/读档系统（React + localStorage） | ✅ 已完成 |
 | [EndingSystemArchitecture.md](./EndingSystemArchitecture.md) | 结局系统（死亡/通关/特殊结局管理） | ✅ 已完成 |
 | [StatisticsSystemArchitecture.md](./StatisticsSystemArchitecture.md) | 统计系统（与存档集成） | ✅ 已完成 |

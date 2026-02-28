@@ -115,23 +115,23 @@ events:
       - trigger: "physique < 5 AND option == hard_work"
         text: "你的腰发出一声脆响。你赚了¥120，但接下来几天恐怕站不直了。"
   
-  act1_work_supermarket:
-    title: "连锁超市夜班"
-    description: "货架上的商品在荧光灯下显得格外刺眼。你的工作是确保它们整齐排列，直到天亮。"
+  act1_work_delivery:
+    title: "送外卖"
+    description: "手机提示音响个不停。你穿上骑手马甲，启动电动车，开始今晚的配送。"
     
     slots_hints:
-      identity_slot:
-        no_match: "你没有证件，只能做最低薪的理货。"
-        matched: "你用假身份证登记，工资能高20%。"
+      transport_slot:
+        no_match: "你没有代步工具，无法接单。"
+        matched: "电动车电量充足，今晚可以多跑几单。"
     
     options:
-      - id: "stock_shelves"
-        text: "整理货架"
-        result: "你赚了¥100，学会了如何把商品摆得更好看。"
+      - id: "normal_delivery"
+        text: "正常送单"
+        result: "你跑了8单，赚了¥130，虽然有点累但收入不错。"
         
-      - id: "cashier"
-        text: "尝试收银（需要身份道具）"
-        condition_hint: "需要：身份证件"
+      - id: "rush_delivery"
+        text: "抢时间送单（需要体魄≥8）"
+        condition_hint: "需要：体魄≥8"
         result: "你赚了¥150，但每一张钞票都让你紧张。"
 
   # ========== 场景2：跨境穿越 ==========

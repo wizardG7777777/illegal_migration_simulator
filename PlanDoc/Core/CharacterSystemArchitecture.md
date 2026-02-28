@@ -55,6 +55,7 @@ interface Attributes {
   
   // 2. 智力（Intelligence）
   // 影响：信息理解、骗局识别、学习速度
+  // 特殊：智力≥7可在场景1触发【灵光一闪】，解锁旅游签证途径，加速离开场景1
   // 获取：学习、阅读、课程
   intelligence: number;          // 范围：0-20
   
@@ -256,18 +257,20 @@ interface EnvironmentalDebuff {
   }[];
 }
 
-// 场景1 Debuff：坐吃山空
-const DEBUFF_ACT1_SITTING_DUCK: EnvironmentalDebuff = {
-  id: 'debuff_act1_sitting_duck',
-  name: '坐吃山空',
-  description: '每回合现金消耗递增，心理健康度自动扣除',
+// 场景1 Debuff：通货紧缩和就业危机
+const DEBUFF_ACT1_ECONOMIC_CRISIS: EnvironmentalDebuff = {
+  id: 'debuff_act1_economic_crisis',
+  name: '经济寒潮',
+  description: '经济紧缩，就业困难。工作机会减少，打工收入下降；但同时物价低迷，生存花销也相应降低',
   condition: { scene: 'act1', minTurn: 5 },
   perTurnEffect: {
-    moneyChange: { amount: -10, currency: 'CNY' },  // 每回合+10元通胀
-    mentalChange: -2                               // 对未来的恐惧
+    // 收入减少：打工事件收入降低30%（通过事件系统修改reward实现）
+    // 花销减少：基础生存成本降低20%（通过减少固定消耗实现）
+    mentalChange: -2                               // 就业焦虑
   },
   countermeasures: [
-    { attribute: 'riskAwareness', threshold: 8 }    // 高风险管理可减轻
+    { attribute: 'social', threshold: 8 },         // 高社交可获取更多工作机会，抵消收入下降
+    { attribute: 'intelligence', threshold: 8 }    // 高智力可找到更高薪工作
   ]
 };
 

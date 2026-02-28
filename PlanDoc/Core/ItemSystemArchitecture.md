@@ -1107,6 +1107,90 @@ namespace ItemDebug {
 
 ---
 
+## 9. 签证材料物品配置（常驻型道具）
+
+### 9.1 旅游签证申请材料
+
+```yaml
+# 物品1：足额的资产证明
+id: visa_bank_statement
+category: PERMANENT
+name: 银行存款证明
+description: |
+  显示你有30万人民币存款的银行证明。
+  这可以向签证官证明你有足够的经济能力负担美国之行。
+tags: [visa_bank_statement, document, visa_material]
+priority: 5
+canBeDeleted: false              # 重要材料，不会被随机事件删除
+slotEffects:
+  checkBonus:
+    social: 1                    # 有钱在社交检定中有微弱优势
+
+# 物品2：去美国的理由
+id: visa_purpose
+category: PERMANENT
+name: 泰勒·斯威夫特演唱会门票预订单
+description: |
+  泰勒·斯威夫特"时代巡回"演唱会美国站的门票预订单。
+  这是你告诉签证官"为什么要去美国"的完美理由——去看偶像的演唱会！
+tags: [visa_purpose, document, visa_material, entertainment]
+priority: 5
+canBeDeleted: false
+slotEffects:
+  mentalRestore: 2               # 想到能去看演唱会，心情变好了
+
+# 物品3：行程计划
+id: visa_itinerary
+category: PERMANENT
+name: 美国行程计划书
+description: |
+  详细的美国旅行计划：
+  - 入境口岸：洛杉矶国际机场
+  - 主要城市：洛杉矶 → 拉斯维加斯 → 纽约
+  - 住宿安排：希尔顿、万豪等酒店预订确认
+  - 交通方式：国内航班、Uber
+  - 预计离境日期：14天后
+  
+  一份详尽的行程计划能大大增加签证通过率。
+tags: [visa_itinerary, document, visa_material]
+priority: 5
+canBeDeleted: false
+slotEffects:
+  checkBonus:
+    riskAwareness: 1             # 有规划的人更有风险意识
+```
+
+### 9.2 物品获取方式汇总
+
+| 物品 | 自行获取方式 | 中介获取 | 备注 |
+|------|-------------|---------|------|
+| 资产证明 | 存款≥30万直接开具，或伪造（5000元） | 5000元 | 伪造有被发现风险 |
+| 去美理由 | 刷抖音有概率触发泰勒演唱会事件 | 5000元 | 刷抖音是日常回SAN方式 |
+| 行程计划 | DIY（5行动点，智力检定） | 5000元 | 高质量行程面签加分 |
+
+### 9.3 事件池动态管理
+
+```typescript
+// 当三样签证材料齐全时，自动移除中介事件
+function checkVisaMaterialsAndUnlockInterview(): void {
+  const hasBankStatement = inventory.permanents.hasItem('visa_bank_statement');
+  const hasPurpose = inventory.permanents.hasItem('visa_purpose');
+  const hasItinerary = inventory.permanents.hasItem('visa_itinerary');
+  
+  if (hasBankStatement && hasPurpose && hasItinerary) {
+    // 材料齐全，解锁面签事件
+    eventPoolManager.addFixedEvent('act1_visa_interview');
+    
+    // 从事件池中移除中介事件（不再需要）
+    eventPoolManager.removeFixedEvent('act1_hire_visa_agent');
+    
+    log("签证材料已齐全！你可以预约大使馆面签了。");
+  }
+}
+```
+
+---
+
 **文档版本**: v1.0
 **最后更新**: 2026-02-25
 **状态**: 设计定稿

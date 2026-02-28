@@ -18,9 +18,9 @@
 
 ### 1.2 核心设计哲学
 
-- **《酒保行动》式叙事**：把"选择"藏进行为里，对话中藏有世界观与轻提示
+- **《酒保行动》式叙事**：把"选择"藏进行为里，但是本游戏倾向于将世界观分散在通知和事件描述中
 - **《大厂模拟器》式数值拉扯**：把现实焦虑做成数值博弈，文本层给足情绪与讽刺
-- **黑色幽默 + 现实映射**：用"现金流、断联、同伴、盘查、落脚、账单"等现实术语构建可传播的金句
+- **黑色幽默 + 现实映射**：用"现金流、断联、盘查、走线"等现实术语构建可传播的金句
 
 ### 1.3 开发阶段
 
@@ -150,7 +150,7 @@ interface ItemSlot {
 
 | 场景 | Debuff名称 | 效果 |
 |-----|-----------|------|
-| 场景1 | 【坐吃山空】 | 每回合现金消耗递增，心理健康自动扣除 |
+| 场景1 | 【就业冰河期】 | 经济下行，打工收入下降，就业困难 |
 | 场景2 | 【环境恶化】 | 每回合身体健康大幅扣除，物资损耗加快 |
 | 场景3 | 【大通胀时代】 | 现金消耗递增、基础心理消耗 |
 
@@ -274,8 +274,8 @@ membership   - 会员资格
 - **关键词**：现金流断裂、盘查恐惧、关系网搭建、长期压力与崩溃
 - **货币**：美元
 - **核心玩法**：身份获取、长期生存、多结局触发
-- **通关条件**：获得绿卡（多种途径：庇护、婚姻、人才、投资等）
-- **二元结局约束**：**要么留在美国（通关/黑户），要么被遣返回中国，无第三种选择**
+- **通关条件**：获得绿卡（多种途径：庇护、人才、投资等）
+- **没有退路**：一旦进入了场景3，就没有办法返回之前的场景，只能在场景3中停留直到通关或死亡
 - **结构性压迫**：与场景2的"随机致命"不同，场景3是慢性消耗（现金流恶性循环）
 - **特有机制**：
   - **移民执法压力**：通过特朗普政策事件触发，产生 `pressure` 类型 Debuff
@@ -295,7 +295,7 @@ membership   - 会员资格
 ### 5.1 叙事语气
 
 - **基调**：冷静克制的旁观者视角，带黑色幽默
-- **视角**：第二人称（"你"）
+- **视角**：以第三人称为主，以主角的名字代替"你"
 - **人称**：避免直接说教，让事件本身说话
 
 ### 5.2 事件描述格式
@@ -313,8 +313,8 @@ membership   - 会员资格
 
 ### 5.3 数值表达规范
 
-- **避免直接显示数字**：用"感觉好多了"代替"心理健康度+10"
-- **保留数值反馈的暗示**：通过表情符号或简短描述暗示变化方向
+- **在非主要部分显示数字**：主要部分显示“感觉好多了”这样的文字描述，而在非主要部分显示“心理健康度+5”这样的数值变化
+- **保留数值反馈的方向/幅度**：用“略微/明显/大幅”+感受描写（如发冷、心慌、松一口气）暗示变化趋势，避免用表情符号作为主要信息载体
 - **例外**：结算界面可以显示具体数值
 
 ### 5.4 梗与金句原则
@@ -348,18 +348,354 @@ membership   - 会员资格
 
 ### 7.1 撰写新事件时
 
+#### 7.1.1 前置检查清单
+
 1. **对照 DesignPrinciples.md**：确保符合核心设计约束（场景特性、结局规则等）
 2. **在 EventPool.md 中登记**：更新索引表格
-3. **在对应场景文件中实现**：遵循槽位系统格式
-4. **检查平衡性**：与现有事件对比数值
-5. **确保 ID 唯一**：使用 `场景_类型_描述` 格式
+3. **检查平衡性**：与现有事件对比数值
+4. **确保 ID 唯一**：使用 `场景_类型_描述` 格式
+
+#### 7.1.2 事件基础字段（所有事件必需）
+
+| 字段 | 类型 | 说明 | 示例 |
+|-----|------|------|------|
+| `id` | string | 全局唯一标识 | `act1_work_supermarket` |
+| `category` | Enum | 事件类型：`RANDOM`/`FIXED`/`CHAIN`/`POLICY_PRESSURE` | `FIXED` |
+| `name` | string | 事件显示名称 | 超市理货员 |
+| `description` | string | 事件描述文本（50-100字，冷静旁观者视角） | 张浩看到超市门口贴着招聘启事... |
+| `scenes` | string[] | 可触发场景列表 | `['act1']` |
+
+#### 7.1.3 随机事件（RANDOM）特有字段
+
+| 字段 | 类型 | 必需 | 说明 | 示例 |
+|-----|------|------|------|------|
+| `trigger.weight` | number | ✅ | 触发权重（相对概率） | `10` |
+| `trigger.cooldown` | number | ❌ | 触发后冷却回合数 | `3` |
+| `trigger.maxTriggers` | number | ❌ | 最大触发次数（整局游戏） | `5` |
+| `trigger.conditions` | Condition[] | ❌ | 触发条件数组 | 见下方条件格式 |
+
+**场景回合条件格式**：
+```yaml
+conditions:
+  - type: SCENE
+    value: act3
+    minSceneTurn: 3    # 场景3第3回合后才触发
+    maxSceneTurn: 20   # 超过20回合不再触发（可选）
+```
+
+#### 7.1.4 固定事件（FIXED）特有字段
+
+| 字段 | 类型 | 必需 | 说明 | 示例 |
+|-----|------|------|------|------|
+| `execution.repeatable` | boolean | ✅ | 是否可重复执行 | `true` |
+| `execution.maxExecutions` | number | ❌ | 最大执行次数 | `10` |
+| `execution.actionPointCost` | number | ✅ | 基础行动点消耗 | `2` |
+| `execution.moneyCost` | number | ❌ | 金钱消耗 | `50` |
+| `execution.moneyCurrency` | string | ❌ | 货币类型：`CNY`/`USD` | `CNY` |
+| `slots` | ItemSlot[] | ❌ | 物品槽位配置 | 见下方槽位格式 |
+
+**槽位配置格式**：
+```yaml
+slots:
+  - id: transport        # 槽位ID
+    name: 交通工具       # 槽位显示名称
+    tags: [transport]    # 匹配道具的标签
+    required: false      # 是否强制要求
+    description: 选择交通工具可提高移动效率
+```
+
+#### 7.1.5 事件选项（Choices）字段
+
+每个选项需要定义：
+
+| 字段 | 类型 | 必需 | 说明 | 示例 |
+|-----|------|------|------|------|
+| `id` | string | ✅ | 选项ID | `option_work_hard` |
+| `name` | string | ✅ | 选项显示文本 | 拼命干活 |
+| `condition` | Condition | ❌ | 可用条件（属性/道具/状态） | `physique >= 12` |
+| `effect` | Effect | ✅ | 选项效果 | 见下方效果格式 |
+
+**选项效果格式**：
+```yaml
+effect:
+  # 资源变化（用文案包装，不直接显示数字）
+  description: 你感到腰酸背痛，但钱包鼓了一些
+  
+  # 实际数值变化（后台计算用）
+  health: -3           # 身体健康度
+  mental: -2           # 心理健康度
+  money: 150           # 现金变化（正数增加）
+  moneyCurrency: CNY   # 货币类型
+  actionPoints: -2     # 行动点消耗
+  
+  # 属性变化（可选）
+  attributes:
+    physique: 0.1      # 体魄小幅提升（0.1为微量）
+  
+  # 获得/失去道具（可选）
+  items:
+    add: [{id: consumable_bread, count: 1}]
+    remove: []
+  
+  # 触发特殊结果（可选）
+  special:
+    gameOver: false
+    endingId: null
+    sceneTransition: null
+```
+
+#### 7.1.6 政策压力事件（POLICY_PRESSURE）特有字段（仅场景3）
+
+| 字段 | 类型 | 必需 | 说明 | 示例 |
+|-----|------|------|------|------|
+| `trigger.minSceneTurn` | number | ✅ | 最早触发回合 | `3` |
+| `content.announcement` | string | ✅ | 特朗普公告原文 | 唐纳德总统宣布... |
+| `content.displayText` | string | ✅ | 游戏内显示文本 | 移民局的搜查力度更大了 |
+| `debuff.id` | string | ✅ | Debuff唯一ID | `debuff_policy_001` |
+| `debuff.name` | string | ✅ | Debuff显示名称 | 移民搜捕升级 |
+| `debuff.type` | string | ✅ | 固定为 `pressure` | `pressure` |
+| `debuff.intensity` | number | ✅ | 强度等级 1-5 | `2` |
+| `debuff.duration` | number | ✅ | 持续回合数 | `10` |
+| `debuff.effects` | object | ✅ | 具体效果配置 | 见下方 |
+
+**pressure Debuff效果字段**：
+```yaml
+effects:
+  raidChanceIncrease: 0.15      # 突击检查概率 +15%
+  workDifficultyIncrease: 10    # 打工难度 +10
+  mentalDamagePerTurn: 2        # 每回合心理伤害 -2
+  cashCostMultiplier: 1.0       # 现金消耗倍率（1.0=无额外影响）
+```
+
+#### 7.1.7 事件触发条件（Condition）类型汇总
+
+```yaml
+# 场景条件
+type: SCENE
+value: act3
+minSceneTurn: 3
+maxSceneTurn: 20
+
+# 属性条件
+type: ATTRIBUTE
+attribute: physique      # 或 intelligence/english/social/riskAwareness/survival
+operator: ">="          # 支持: >, <, >=, <=, ==
+value: 12
+
+# 道具条件
+type: ITEM
+itemId: perm_backpack   # 特定道具ID（可选）
+tag: transport          # 道具标签（可选）
+count: 1                # 数量要求（默认1）
+
+# 状态标记条件
+type: FLAG
+flag: has_met_guide     # 状态标记名
+value: true             # 是否存在该标记
+```
+
+---
 
 ### 7.2 撰写新道具时
 
+#### 7.2.1 前置检查清单
+
 1. **选择正确分类**：Consumable / Permanent / Book
-2. **分配属性标签**：用于事件槽位匹配
-3. **设置优先级**：0-9，数字越小越优先
-4. **在物品清单中登记**：更新对应分类文件
+2. **确定使用方式**：直接使用（self）/ 通过事件使用（event）
+3. **在物品清单中登记**：更新对应分类文件
+
+#### 7.2.2 消耗型道具（CONSUMABLE）字段
+
+**基础字段（所有消耗型共有）**：
+
+| 字段 | 类型 | 必需 | 说明 | 示例 |
+|-----|------|------|------|------|
+| `id` | string | ✅ | 唯一标识符 | `consumable_painkiller` |
+| `name` | string | ✅ | 显示名称 | 止痛药 |
+| `description` | string | ✅ | 道具描述 | 可以缓解轻度疼痛... |
+| `category` | string | ✅ | 固定为 `CONSUMABLE` | `CONSUMABLE` |
+| `subCategory` | string | ✅ | 细分品类：`medical`/`food`/`book`/`other` | `medical` |
+| `maxStack` | number | ✅ | 最大堆叠数量 | `10` |
+| `useTarget` | string | ✅ | 使用方式：`self`直接点击使用 / `event`通过事件使用 | `self` |
+| `tags` | string[] | ❌ | 属性标签（书籍必须有`book`） | `[medical]` |
+| `priority` | number | ❌ | 优先级 0-9（用于事件槽位匹配） | `5` |
+
+**使用效果字段（effects）**：
+
+| 字段 | 类型 | 说明 | 示例 |
+|-----|------|------|------|
+| `healthRestore` | number | 回复身体健康度 | `15` |
+| `mentalRestore` | number | 回复心理健康度 | `5` |
+| `actionPointRestore` | number | 回复行动点 | `0` |
+| `attributeBonus` | object | 一次性属性加成 | `{physique: 1}` |
+| `grantItems` | array | 使用后获得其他道具 | `[{itemId: x, count: 1}]` |
+
+**可选字段（useCost）**：
+
+| 字段 | 类型 | 说明 | 示例 |
+|-----|------|------|------|
+| `useCost.actionPoint` | number | 使用消耗行动点 | `1` |
+| `useCost.money` | number | 使用消耗金钱 | `50` |
+
+**完整示例**：
+```yaml
+id: consumable_painkiller
+name: 止痛药
+description: 白色小药片，可以缓解轻度疼痛
+category: CONSUMABLE
+subCategory: medical
+maxStack: 10
+useTarget: self
+tags: [medical]
+priority: 5
+
+effects:
+  healthRestore: 15
+  mentalRestore: 0
+  actionPointRestore: 0
+
+useCost:
+  actionPoint: 0
+  money: 0
+```
+
+#### 7.2.3 常驻型道具（PERMANENT）字段
+
+**基础字段**：
+
+| 字段 | 类型 | 必需 | 说明 | 示例 |
+|-----|------|------|------|------|
+| `id` | string | ✅ | 唯一标识符 | `perm_backpack` |
+| `name` | string | ✅ | 显示名称 | 登山背包 |
+| `description` | string | ✅ | 道具描述 | 容量大，适合长途跋涉 |
+| `category` | string | ✅ | 固定为 `PERMANENT` | `PERMANENT` |
+| `tags` | string[] | ✅ | 属性标签列表（核心匹配字段） | `[tool, survival_gear]` |
+| `priority` | number | ✅ | 优先级 0-9，**数字越小越优先** | `3` |
+| `canBeDeleted` | boolean | ✅ | 是否可被随机事件删除 | `false` |
+
+**槽位效果字段（slotEffects）** - 被事件匹配时生效：
+
+| 字段 | 类型 | 说明 | 示例 |
+|-----|------|------|------|
+| `actionPointCostModifier` | number | 行动点消耗调整（如`-1`表示省1点） | `-1` |
+| `moneyMultiplier` | number | 金钱收益倍率（如`1.3`表示+30%） | `1.0` |
+| `moneyBaseModifier` | number | 金钱基础值调整（如`+50`） | `0` |
+| `checkBonus` | object | 属性检定加成 | `{survival: 2}` |
+| `successRateModifier` | number | 成功率调整（0-1） | `0.1` |
+| `unlockOptions` | string[] | 解锁的选项ID列表 | `[option_shortcut]` |
+
+**被动效果字段（passiveEffects）** - 始终生效（可选）：
+
+| 字段 | 类型 | 说明 | 示例 |
+|-----|------|------|------|
+| `perTurn.healthRestore` | number | 每回合自动回复健康 | `0` |
+| `perTurn.mentalRestore` | number | 每回合自动回复心理 | `1` |
+| `perTurn.moneyChange` | number | 每回合自动金钱变化（负数为消耗） | `-50` |
+| `resistance` | array | 事件抗性（降低某类事件影响） | `[{eventType: weather, reductionPercent: 0.3}]` |
+
+**维护成本字段（upkeepCost）** - 每回合固定消耗（可选）：
+
+| 字段 | 类型 | 说明 | 示例 |
+|-----|------|------|------|
+| `moneyPerTurn` | number | 每回合金钱消耗 | `50` |
+| `actionPointPerTurn` | number | 每回合行动点消耗 | `0` |
+
+**完整示例**：
+```yaml
+id: perm_ebike
+name: 二手电动车
+description: 充满电能跑40公里，送外卖的好帮手
+category: PERMANENT
+tags: [transport]
+priority: 3
+canBeDeleted: true
+
+# 槽位效果（配合相关事件时生效）
+slotEffects:
+  actionPointCostModifier: -1
+  moneyMultiplier: 1.2
+  checkBonus:
+    physique: 1
+
+# 被动效果（始终生效）
+passiveEffects:
+  perTurn:
+    mentalRestore: 0.5    # 送外卖的自由感让心情略好
+
+# 维护成本（每回合）
+upkeepCost:
+  moneyPerTurn: 5         # 充电费用
+```
+
+#### 7.2.4 书籍类道具（BOOK）字段
+
+书籍是消耗型的特殊子类，**全局唯一**（整局游戏固定数量）：
+
+| 字段 | 类型 | 必需 | 说明 | 示例 |
+|-----|------|------|------|------|
+| `id` | string | ✅ | 唯一标识符 | `book_english_basic` |
+| `name` | string | ✅ | 显示名称 | 《英语900句》 |
+| `description` | string | ✅ | 道具描述 | 封面泛黄，内页有前任主人的笔记 |
+| `category` | string | ✅ | 固定为 `CONSUMABLE` | `CONSUMABLE` |
+| `subCategory` | string | ✅ | 固定为 `book` | `book` |
+| `bookId` | string | ✅ | 书籍唯一ID（全局书籍池用） | `book_001` |
+| `rarity` | string | ✅ | 稀有度：`COMMON`/`RARE`/`EPIC` | `COMMON` |
+| `maxStack` | number | ✅ | 通常为1 | `1` |
+| `useTarget` | string | ✅ | 固定为 `event`（通过读书事件使用） | `event` |
+| `tags` | string[] | ✅ | 必须包含 `book` | `[book, english]` |
+| `priority` | number | ✅ | 用于读书事件槽位匹配 | `5` |
+
+**书籍效果示例**：
+```yaml
+id: book_english_basic
+name: 《英语900句》
+description: 封面泛黄，内页有前任主人的笔记
+category: CONSUMABLE
+subCategory: book
+bookId: book_001
+rarity: COMMON
+maxStack: 1
+useTarget: event
+tags: [book, english]
+priority: 5
+
+effects:
+  # 阅读后属性提升
+  attributeBonus:
+    english: 1          # 英语技能+1
+  mentalRestore: 3      # 学到知识的满足感
+```
+
+#### 7.2.5 标准道具标签（tags）参考
+
+| 标签 | 用途 | 典型道具 |
+|-----|------|---------|
+| `transport` | 交通工具事件 | 电动车、二手车、公交卡 |
+| `lodging` | 住宿场所（场景3生活成本） | 合租房间、公寓 |
+| `medical` | 医疗事件 | 止痛药、绷带、抗生素 |
+| `food` | 食物补给 | 压缩饼干、罐头 |
+| `book` | 读书事件（书籍必须有） | 《英语900句》 |
+| `tool` | 工具类事件 | 扳手、螺丝刀 |
+| `weapon` | 战斗/防御事件 | 匕首、辣椒喷雾 |
+| `identity` | 身份验证事件 | 假护照、工卡 |
+| `document` | 文件/签证事件 | 银行流水、行程单 |
+| `contact` | 人脉关系事件 | 蛇头联系方式、律师名片 |
+| `guide` | 向导服务 | 雨林向导 |
+| `cross_scene` | 跨场景保留标记 | 重要证件 |
+
+#### 7.2.6 道具优先级（priority）设置指南
+
+优先级范围 0-9，**数字越小优先级越高**，用于事件槽位自动匹配时选择默认道具：
+
+| 优先级 | 适用情况 | 示例 |
+|-------|---------|------|
+| 0-1 | 任务关键道具、高品质道具 | 特斯拉（vs 二手车） |
+| 2-3 | 常用优质道具 | 公寓（vs 合租） |
+| 4-5 | 普通道具 | 电动车、超市购物袋 |
+| 6-7 | 临时/劣质道具 | 收容所床位 |
+| 8-9 | 消耗品、备选道具 | 一次性雨衣 |
+
+**规则**：当多个道具匹配同一槽位时，自动选中优先级最高的（数字最小的）。
 
 ### 7.3 修改系统架构时
 
@@ -430,7 +766,7 @@ membership   - 会员资格
 ```
 - 场景1很难死亡，死亡复用场景3文案
 - 场景2只能前进，无退路
-- 场景3二元结局：留在美国 或 回中国
+- 场景3结局：获得绿卡（通关）或长期黑户生存
 - 入狱即终局：无保释、无大赦
 ```
 

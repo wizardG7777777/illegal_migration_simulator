@@ -84,9 +84,21 @@ const ENDING_TYPE_CONFIGS: Record<EndingType, EndingTypeConfig> = {
 
 ```typescript
 type DeathEndingId = 
+  // 终结态死亡
   | 'death_dying'                  // 濒死状态超时
   | 'death_breakdown'              // 崩溃状态超时（自杀/精神崩溃）
   | 'death_destitution'            // 长期匮乏致死（营养不良/疾病）
+  // 场景2特定死亡结局（阶段1：雨林）
+  | 'death_bandit'                 // 丛林劫匪枪杀
+  | 'death_snake'                  // 毒蛇毒发
+  | 'death_fall'                   // 摔下山崖
+  | 'death_swamp'                  // 陷入沼泽
+  | 'death_infection'              // 感染败血症
+  | 'death_poison'                 // 食物中毒
+  // 场景2特定死亡结局（阶段2→3：穿越失败）
+  | 'death_desert_crossing'        // 沙漠穿越失败
+  | 'death_wall_fall'              // 攀爬边境墙失败
+  // 场景3死亡
   | 'death_raid'                   // 突击检查中被击毙
   | 'death_accident'               // 意外事故（交通事故、工伤等）
   | 'death_violence'               // 暴力冲突（抢劫、斗殴等）
@@ -104,6 +116,7 @@ interface DeathEndingConfig {
 }
 
 const DEATH_ENDINGS: Record<DeathEndingId, DeathEndingConfig> = {
+  // ===== 终结态死亡 =====
   death_dying: {
     id: 'death_dying',
     type: 'DEATH',
@@ -125,6 +138,68 @@ const DEATH_ENDINGS: Record<DeathEndingId, DeathEndingConfig> = {
     description: '长期的营养不良和恶劣环境终于击垮了你。你倒在街头，无人问津。',
     terminalState: 'DESTITUTION'
   },
+  
+  // ===== 场景2特定死亡结局（阶段1：雨林） =====
+  death_bandit: {
+    id: 'death_bandit',
+    type: 'DEATH',
+    name: '劫匪枪杀',
+    description: '那个男人的枪比你想象中更旧，但抵在额头上的感觉是一样的冰冷。"钱。"他只说了这一个字。你颤抖着掏出所有现金。他数了数，皱起眉头。"就这些？"你想解释，但枪声已经响了。你的尸体被拖进灌木丛，钱被拿走，没有人会为你收尸。',
+    triggerEvent: 'rand2_bandit'
+  },
+  death_snake: {
+    id: 'death_snake',
+    type: 'DEATH',
+    name: '毒蛇毒发',
+    description: '剧痛从小腿传来时，你低头看到了那条色彩斑斓的蛇——它正从你的脚边溜走。你知道这种蛇。你在水群里看过照片，有人说"被咬了基本没救"。你试图用嘴吸出毒液，但舌头很快开始发麻。视野边缘出现黑点，呼吸变得困难。你倒在雨林深处，成为这片土地的养分。',
+    triggerEvent: 'rand2_snake'
+  },
+  death_fall: {
+    id: 'death_fall',
+    type: 'DEATH',
+    name: '摔下山崖',
+    description: '你踩到了一块松动的石头，身体失去平衡。你试图抓住什么，但只抓到了一把藤蔓。藤蔓断了。然后你在坠落。最后看到的，是茂密的树冠和一线天空。你的身体会在几周后被发现，或者被野兽吃掉，或者就这样腐烂。',
+    triggerEvent: 'rand2_fall'
+  },
+  death_swamp: {
+    id: 'death_swamp',
+    type: 'DEATH',
+    name: '陷入沼泽',
+    description: '你以为是普通的积水，一脚踩下去才知道是沼泽。泥水迅速没过膝盖，然后是腰部。你拼命挣扎，但越挣扎陷得越快。"救命！"你喊了几声，但雨林里只有你的回音。泥水没过胸口时，你开始后悔。后悔离开家，后悔走这条路，后悔没有听那个老人说的"别独自进雨林"。泥水没过头顶。一切归于寂静。',
+    triggerEvent: 'rand2_swamp'
+  },
+  death_infection: {
+    id: 'death_infection',
+    type: 'DEATH',
+    name: '感染败血症',
+    description: '起初只是一个小伤口，被某种虫子咬的。你简单处理了一下，继续前进。三天后，伤口开始流脓，你发起高烧。你没有抗生素，也没有足够的净水清洗伤口。你倒在一棵大树下，浑身滚烫又发冷。意识模糊中，你想起母亲塞给你的红包。你没有机会报平安了。',
+    triggerEvent: 'rand2_insect'
+  },
+  death_poison: {
+    id: 'death_poison',
+    type: 'DEATH',
+    name: '食物中毒',
+    description: '你太饿了。那堆野果看起来可以吃——颜色鲜艳，散发着甜香。你吃了。然后你开始剧烈呕吐、腹泻、痉挛。雨林里没有医院，没有救护车。你蜷缩在树根旁，脱水、虚脱，直到心脏停止跳动。后来的人也许会发现你的尸体，看到你手中还攥着的半个毒果。',
+    triggerEvent: 'rand2_food'
+  },
+  
+  // ===== 场景2特定死亡结局（阶段2→3：穿越失败） =====
+  death_desert_crossing: {
+    id: 'death_desert_crossing',
+    type: 'DEATH',
+    name: '沙漠渴死',
+    description: '第三天你倒在沙地上，喉咙像塞了一把烧红的刀子。你试图爬，但沙子烫得像是熔炉。最后的意识里，你听到风吹过边境墙的声音——那么近，又那么远。',
+    triggerEvent: 'act2_cross_desert'
+  },
+  death_wall_fall: {
+    id: 'death_wall_fall',
+    type: 'DEATH',
+    name: '坠墙身亡',
+    description: '你攀上了墙顶，但体力已经耗尽。手指一滑，身体向后仰去。你甚至没来得及喊叫，就重重摔在水泥地上。视野迅速变黑，最后的意识是身下的温热——那是你自己的血。',
+    triggerEvent: 'act2_cross_climb'
+  },
+  
+  // ===== 场景3死亡 =====
   death_raid: {
     id: 'death_raid',
     type: 'DEATH',
@@ -158,7 +233,7 @@ const DEATH_ENDINGS: Record<DeathEndingId, DeathEndingConfig> = {
     type: 'DEATH',
     name: '环境致死',
     description: '恶劣的环境终于吞噬了你。你的尸体可能永远不会被发现。',
-    triggerEvent: 'rand2_environment_fatal'
+    triggerEvent: 'rand3_environment_fatal'
   },
   death_illness: {
     id: 'death_illness',
@@ -1713,3 +1788,33 @@ class EventChainManager {
 > - 场景3的结局只能是在美国（通关/黑户）或回中国（各种遣返/回国），**禁止添加转往其他国家的结局**
 > - 入狱相关结局必须是终局，**禁止添加保释、越狱、大赦等可逆结局**
 > - 场景1的"放弃"结局是固定设计，**触发条件不可更改**（30回合+场景1）
+
+---
+
+## 修改记录
+
+### 2026-02-27
+
+**修改内容**：添加场景2的8个特定死亡结局
+
+**参考文档**：`/PlanDoc/NarrativeDocs/StoryOutline/Act2_Outline.md` (## 死亡结局描述 章节)
+
+**新增死亡结局ID**：
+- 场景2阶段1（雨林）：`death_bandit`, `death_snake`, `death_fall`, `death_swamp`, `death_infection`, `death_poison`
+- 场景2阶段2→3（穿越失败）：`death_desert_crossing`, `death_wall_fall`
+
+**triggerEvent对应关系**：
+| 结局ID | 触发事件ID | 说明 |
+|--------|-----------|------|
+| death_bandit | rand2_bandit | 丛林劫匪事件判定失败 |
+| death_snake | rand2_snake | 毒蛇猛兽事件判定失败 |
+| death_fall | rand2_fall | 危险小径事件判定失败 |
+| death_swamp | rand2_swamp | 沼泽陷阱事件判定失败 |
+| death_infection | rand2_insect | 毒虫袭击事件判定失败 |
+| death_poison | rand2_food | 可疑食物事件判定失败 |
+| death_desert_crossing | act2_cross_desert | 沙漠穿越方式检定失败 |
+| death_wall_fall | act2_cross_climb | 攀爬边境墙方式检定失败 |
+
+**其他修改**：
+- 对 DEATH_ENDINGS 配置进行了分组整理（终结态死亡/场景2阶段1/场景2阶段2→3/场景3死亡）
+- 使用 `death_bandit` 单数形式（非 `death_bandits`）

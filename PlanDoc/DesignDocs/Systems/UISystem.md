@@ -60,7 +60,7 @@ const cashTextMap = (amount: number): string => {
 
 **示例文案**：
 ```
-【坐吃山空】Debuff 提示：
+【就业冰河期】Debuff 提示：
 "你的存款正在以肉眼可见的速度消失，
  就像你的青春一样。"
 
