@@ -1,0 +1,65 @@
+{
+  "version": "1.0.0",
+  "items": [
+    {
+      "id": "food_supply",
+      "name": "食物补给",
+      "description": "维持生命的基本物资，面包、罐头、压缩饼干的统称。可以缓解饥饿并略微恢复身体健康。",
+      "category": "CONSUMABLE",
+      "subCategory": "food",
+      "maxStack": 10,
+      "useTarget": "self",
+      "tags": ["food"],
+      "priority": 5,
+      "effects": {
+        "healthRestore": 5,
+        "mentalRestore": 0,
+        "actionPointRestore": 0
+      },
+      "useCost": {
+        "actionPoint": 0,
+        "money": 0
+      }
+    },
+    {
+      "id": "painkiller",
+      "name": "止痛药",
+      "description": "白色小药片，可以缓解轻度疼痛。在艰苦的环境中，这是难得的慰藉。",
+      "category": "CONSUMABLE",
+      "subCategory": "medical",
+      "maxStack": 10,
+      "useTarget": "self",
+      "tags": ["medical"],
+      "priority": 5,
+      "effects": {
+        "healthRestore": 15,
+        "mentalRestore": 0,
+        "actionPointRestore": 0
+      },
+      "useCost": {
+        "actionPoint": 0,
+        "money": 0
+      }
+    },
+    {
+      "id": "energy_drink",
+      "name": "能量饮料",
+      "description": "蓝色罐装的功能饮料，喝了可以暂时恢复精力，但长期依赖对身体不好。",
+      "category": "CONSUMABLE",
+      "subCategory": "food",
+      "maxStack": 5,
+      "useTarget": "self",
+      "tags": ["food"],
+      "priority": 4,
+      "effects": {
+        "healthRestore": -2,
+        "mentalRestore": 5,
+        "actionPointRestore": 1
+      },
+      "useCost": {
+        "actionPoint": 0,
+        "money": 0
+      }
+    }
+  ]
+}

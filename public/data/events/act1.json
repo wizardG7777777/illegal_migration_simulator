@@ -1,0 +1,168 @@
+{
+  "version": "1.0.0",
+  "events": [
+    {
+      "id": "act1_work_warehouse",
+      "category": "FIXED",
+      "name": "快递分拣夜班",
+      "description": "你看到一个物流中心在招临时工，时薪20元，夜班补贴10元。工作内容是分拣快递，需要从晚上8点干到凌晨4点。",
+      "scenes": ["act1"],
+      "execution": {
+        "repeatable": true,
+        "maxExecutions": 10,
+        "actionPointCost": 3
+      },
+      "choices": [
+        {
+          "id": "work_normal",
+          "name": "正常干活",
+          "effects": {
+            "resources": {
+              "health": -5,
+              "mental": -3,
+              "money": 150,
+              "moneyCurrency": "CNY"
+            },
+            "narrative": "你感到腰酸背痛，但钱包鼓了一些"
+          }
+        },
+        {
+          "id": "work_hard",
+          "name": "拼命干",
+          "condition": {
+            "type": "ATTRIBUTE",
+            "attribute": "physique",
+            "operator": ">=",
+            "value": 8
+          },
+          "effects": {
+            "resources": {
+              "health": -8,
+              "mental": -5,
+              "money": 220,
+              "moneyCurrency": "CNY"
+            },
+            "attributes": {
+              "physique": 0.1
+            },
+            "narrative": "身体快散架了，但学到了提高效率的技巧"
+          }
+        },
+        {
+          "id": "work_slack",
+          "name": "摸鱼混时间",
+          "effects": {
+            "resources": {
+              "health": -2,
+              "mental": 0,
+              "money": 80,
+              "moneyCurrency": "CNY"
+            },
+            "narrative": "你找了个角落刷手机，时间过得很慢"
+          }
+        }
+      ],
+      "tags": ["work", "labor"]
+    },
+    {
+      "id": "act1_work_supermarket",
+      "category": "FIXED",
+      "name": "超市理货员",
+      "description": "小区门口的大超市招理货员，每天工作6小时，主要负责整理货架和补货。工作环境比物流仓库好一些。",
+      "scenes": ["act1"],
+      "execution": {
+        "repeatable": true,
+        "maxExecutions": 15,
+        "actionPointCost": 2
+      },
+      "choices": [
+        {
+          "id": "work_regular",
+          "name": "认真工作",
+          "effects": {
+            "resources": {
+              "health": -2,
+              "mental": -2,
+              "money": 120,
+              "moneyCurrency": "CNY"
+            },
+            "narrative": "工作不算太累，还能和顾客聊几句"
+          }
+        },
+        {
+          "id": "work_overtime",
+          "name": "主动加班",
+          "effects": {
+            "resources": {
+              "health": -4,
+              "mental": -4,
+              "money": 180,
+              "moneyCurrency": "CNY"
+            },
+            "narrative": "多干了两个小时，经理对你印象不错"
+          }
+        }
+      ],
+      "tags": ["work", "service"]
+    },
+    {
+      "id": "act1_study_english",
+      "category": "FIXED",
+      "name": "自学英语",
+      "description": "你拿出一本旧英语教材，决定利用空闲时间提高英语水平。学英语对未来的计划很重要。",
+      "scenes": ["act1"],
+      "execution": {
+        "repeatable": true,
+        "maxExecutions": 20,
+        "actionPointCost": 2
+      },
+      "slots": [
+        {
+          "id": "book",
+          "name": "学习资料",
+          "tags": ["book"],
+          "required": false,
+          "description": "有教材学习效果更好"
+        }
+      ],
+      "choices": [
+        {
+          "id": "study_basic",
+          "name": "背单词",
+          "effects": {
+            "resources": {
+              "mental": -3,
+              "actionPoints": 0
+            },
+            "attributes": {
+              "english": 0.2
+            },
+            "narrative": "abandon, abandon... 背单词总是从放弃开始"
+          }
+        },
+        {
+          "id": "study_advanced",
+          "name": "看美剧学习",
+          "condition": {
+            "type": "ATTRIBUTE",
+            "attribute": "intelligence",
+            "operator": ">=",
+            "value": 10
+          },
+          "effects": {
+            "resources": {
+              "mental": -2,
+              "actionPoints": 0
+            },
+            "attributes": {
+              "english": 0.3,
+              "intelligence": 0.05
+            },
+            "narrative": "边看《绝命毒师》边学俚语，感觉英语水平突飞猛进"
+          }
+        }
+      ],
+      "tags": ["study", "skill"]
+    }
+  ]
+}

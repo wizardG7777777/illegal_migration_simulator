@@ -1,0 +1,138 @@
+{
+  "version": "1.0.0",
+  "events": [
+    {
+      "id": "act3_work_dishwasher",
+      "category": "FIXED",
+      "name": "中餐馆洗碗工",
+      "description": "唐人街的一家中餐馆招洗碗工，每小时15美元，现金结算。老板说：'没身份没关系，只要手快就行。'",
+      "scenes": ["act3"],
+      "execution": {
+        "repeatable": true,
+        "maxExecutions": 20,
+        "actionPointCost": 2
+      },
+      "choices": [
+        {
+          "id": "wash_normal",
+          "name": "正常干活",
+          "effects": {
+            "resources": {
+              "health": -3,
+              "mental": -2,
+              "money": 60,
+              "moneyCurrency": "USD"
+            },
+            "narrative": "手泡在热水里四个小时，拿到了皱巴巴的钞票"
+          }
+        },
+        {
+          "id": "wash_overtime",
+          "name": "主动加班",
+          "effects": {
+            "resources": {
+              "health": -5,
+              "mental": -4,
+              "money": 100,
+              "moneyCurrency": "USD"
+            },
+            "narrative": "多干了三个小时，腰都快直不起来了"
+          }
+        }
+      ],
+      "tags": ["work", "cash_job", "chinatown"]
+    },
+    {
+      "id": "act3_work_delivery",
+      "category": "FIXED",
+      "name": "送外卖",
+      "description": "外卖平台招骑手，按单结算，多劳多得。需要自备交通工具。",
+      "scenes": ["act3"],
+      "execution": {
+        "repeatable": true,
+        "maxExecutions": 15,
+        "actionPointCost": 3
+      },
+      "slots": [
+        {
+          "id": "vehicle",
+          "name": "交通工具",
+          "tags": ["transport"],
+          "required": true,
+          "description": "需要交通工具才能送外卖"
+        }
+      ],
+      "choices": [
+        {
+          "id": "deliver_normal",
+          "name": "送单",
+          "effects": {
+            "resources": {
+              "health": -2,
+              "mental": -1,
+              "money": 80,
+              "moneyCurrency": "USD"
+            },
+            "narrative": "跑了六单，小费给得很少"
+          }
+        },
+        {
+          "id": "deliver_premium",
+          "name": "接高价单",
+          "condition": {
+            "type": "ITEM",
+            "tag": "transport"
+          },
+          "effects": {
+            "resources": {
+              "health": -2,
+              "mental": -1,
+              "money": 120,
+              "moneyCurrency": "USD"
+            },
+            "narrative": "接了几个偏远地区的高价单，收入不错"
+          }
+        }
+      ],
+      "tags": ["work", "gig_economy"]
+    },
+    {
+      "id": "act3_policy_001",
+      "category": "POLICY_PRESSURE",
+      "name": "移民政策公告",
+      "description": "电视上正在播放新闻，特朗普总统宣布加强边境管控和移民执法力度。",
+      "scenes": ["act3"],
+      "trigger": {
+        "minSceneTurn": 3,
+        "announcement": "唐纳德总统宣布加强移民执法",
+        "displayText": "移民局的搜查力度更大了"
+      },
+      "debuff": {
+        "id": "debuff_policy_001",
+        "name": "移民搜捕升级",
+        "type": "pressure",
+        "intensity": 2,
+        "duration": 10,
+        "effects": {
+          "raidChanceIncrease": 0.15,
+          "workDifficultyIncrease": 10,
+          "mentalDamagePerTurn": 2,
+          "cashCostMultiplier": 1.0
+        }
+      },
+      "choices": [
+        {
+          "id": "acknowledge",
+          "name": "了解",
+          "effects": {
+            "resources": {
+              "mental": -3
+            },
+            "narrative": "你关掉电视，心里沉甸甸的。这里也不安全。"
+          }
+        }
+      ],
+      "tags": ["policy", "pressure"]
+    }
+  ]
+}
