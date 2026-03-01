@@ -613,14 +613,15 @@ private static giveStarterKitByTransitionType(
 // 
 // 住宿成本由 lodging 标签道具决定：
 //   - 无道具：$0（但会获得【露宿街头】Debuff）
-//   - 收容所床位：$0
-//   - 合租房间：$600
-//   - 公寓：$1,200
-//   - House：$2,500
+//   - 家庭旅馆床位：$500
+//   - 合租房间：$1600
+//   - 公寓：$3,200
 //
 // 出行成本由 transport 标签道具决定：
-//   - 无道具/公交卡：$100
+//   - 无道具/公交卡：$50
+//   - 以下代步道具仅场景1可用
 //   - 电动车：$50
+//   - 以下代步道具仅场景3可用
 //   - 二手车：$350
 //   - 特斯拉：$600
 ```
@@ -868,8 +869,6 @@ vim public/data/items/permanents.json
 | **模块7** | UI 组件 | 1天 | 模块6 |
 | **模块8** | 集成测试 | 0.5天 | 全部 |
 
-**总计：约 6 天**
-
 ### 6.2 各模块详细内容
 
 **模块1：类型定义 + 工具函数**
@@ -1081,6 +1080,569 @@ interface SaveData {
 // 保存：JSON.stringify(saveData)
 // 加载：JSON.parse(data) + 版本迁移（如有需要）
 ```
+
+---
+
+## 7. 开发工具（DevTools）
+
+> **重要**：本章节的工具仅在开发模式下可用（`import.meta.env.DEV === true`），不会打包到生产环境。
+
+### 7.1 Web 仪表盘（Event Dashboard）
+
+为简化事件数据的可视化管理和调试，需要开发一个开发专用的 Web 仪表盘。
+
+#### 7.1.1 访问方式
+
+```
+开发服务器启动后：
+http://localhost:5173/__devtools/dashboard
+
+或在游戏内按 `~` 键（反引号）调出 DevTools 悬浮窗，点击"打开仪表盘"
+```
+
+#### 7.1.2 核心功能模块
+
+**模块1：事件关系图谱（Event Graph）**
+
+```typescript
+interface EventGraphProps {
+  // 功能要求
+  features: {
+    showChainConnections: boolean;    // 显示事件链连接（CHAIN -> nextEventId）
+    showUnlockConditions: boolean;    // 显示解锁条件（requiredFlags）
+    showSceneBoundaries: boolean;     // 按场景分色显示
+    filterByCategory: EventCategory[]; // 按类型筛选
+    searchById: string;               // 按ID搜索高亮
+  };
+  
+  // 交互
+  interactions: {
+    clickToViewDetails: boolean;      // 点击查看事件详情
+    dragToPan: boolean;               // 拖拽平移画布
+    scrollToZoom: boolean;            // 滚轮缩放
+    doubleClickToOpenJson: boolean;   // 双击打开对应 JSON 文件
+  };
+}
+```
+
+展示效果示例：
+```
+┌──────────────────────────────────────────────────────────┐
+│  [🔍 搜索事件...]  [场景: 全部 ▼]  [类型: 全部 ▼]          │
+├──────────────────────────────────────────────────────────┤
+│                                                          │
+│    ┌──────────┐         ┌──────────┐                    │
+│    │act1_work_│────────▶│act1_train│                    │
+│    │warehouse │ unlocks │ _gym     │                    │
+│    │ (FIXED)  │         │ (FIXED)  │                    │
+│    └──────────┘         └──────────┘                    │
+│          │                                              │
+│          │ triggers (cooldown: 3)                       │
+│          ▼                                              │
+│    ┌──────────┐                                         │
+│    │rand1_    │ (RANDOM)                                │
+│    │back_pain │                                         │
+│    └──────────┘                                         │
+│                                                          │
+│  图例: 🟦 FIXED  🟨 RANDOM  🟩 CHAIN  🟥 POLICY_PRESSURE │
+└──────────────────────────────────────────────────────────┘
+```
+
+**模块2：数值平衡面板（Balance Panel）**
+
+```typescript
+interface BalancePanelProps {
+  // 对比维度
+  comparisons: {
+    workEvents: {                     // 打工事件对比
+      showIncomePerActionPoint: boolean;
+      showHealthCostPerIncome: boolean;
+      showMentalCostPerIncome: boolean;
+      highlightOutliers: boolean;     // 高亮异常值（偏离均值>30%）
+    };
+    
+    livingCosts: {                    // 生活成本对比
+      showByLodgingType: boolean;     // 按住宿类型分组
+      showByTransportType: boolean;   // 按出行类型分组
+      inflationImpact: boolean;       // 模拟通胀影响
+    };
+    
+    debtOptions: {                    // 借贷选项对比
+      showTotalCost: boolean;         // 显示总成本（本金+利息）
+      showPerTurnBurden: boolean;     // 显示每期负担
+      compareAcrossScenes: boolean;   // 跨场景对比
+    };
+  };
+}
+```
+
+展示效果示例：
+```
+┌──────────────────────────────────────────────────────────┐
+│              场景3打工事件性价比分析                      │
+├──────────────┬────────┬────────┬────────┬───────────────┤
+│ 事件          │ 时薪   │ 健康/AP│ 心理/AP│ 评级          │
+├──────────────┼────────┼────────┼────────┼───────────────┤
+│ 洗碗工        │ $20    │ -4     │ -2     │ ★★★☆          │
+│ 装修队        │ $50 ⚠️ │ -5     │ -3     │ ★★☆☆ (高风险)  │
+│ 送外卖        │ $27    │ -2.5   │ -1.5   │ ★★★★ ✓ 推荐    │
+│ 开Uber       │ $40    │ -1.5   │ -1     │ ★★★★★ 最优     │
+└──────────────┴────────┴────────┴────────┴───────────────┘
+
+┌──────────────────────────────────────────────────────────┐
+│              生活成本压力测试                             │
+├──────────────┬────────┬────────┬────────┬───────────────┤
+│ 配置          │ 食品   │ 住宿   │ 出行   │ 总计/月       │
+├──────────────┼────────┼────────┼────────┼───────────────┤
+│ 基础配置      │ $400   │ $600   │ $100   │ $1,100        │
+│ +20%通胀      │ $480   │ $720   │ $120   │ $1,320 ⚠️     │
+│ 最差(收容所)  │ $400   │ $0     │ $50    │ $450 +露宿惩罚│
+└──────────────┴────────┴────────┴────────┴───────────────┘
+```
+
+**模块3：事件沙盒测试器（Event Sandbox）**
+
+```typescript
+interface EventSandboxProps {
+  // 状态设置
+  initialState: {
+    editable: boolean;
+    presets: GameStatePreset[];       // 预设状态（新手/中期/濒死等）
+    customValues: {                   // 可自定义的数值
+      money: number;
+      health: number;
+      mental: number;
+      actionPoints: number;
+      attributes: Attributes;
+      inventory: string[];            // 道具ID列表
+      flags: string[];                // 状态标记
+    };
+  };
+  
+  // 测试执行
+  execution: {
+    selectEvent: string;              // 选择要测试的事件ID
+    selectChoice: string;             // 选择选项（可选）
+    runSimulation: () => SimulationResult;
+    showStepByStep: boolean;          // 逐步显示效果
+    compareBeforeAfter: boolean;      // 对比执行前后状态
+  };
+  
+  // 结果展示
+  results: {
+    stateChanges: StateDiff;          // 状态变化对比
+    triggeredEvents: string[];        // 触发的后续事件
+    narrativePreview: string;         // 文案预览
+    warnings: string[];               // 警告（如可能导致死亡）
+  };
+}
+```
+
+展示效果示例：
+```
+┌──────────────────────────────────────────────────────────┐
+│  [选择事件: act3_underground_loan ▼]  [🚀 运行测试]        │
+├──────────────────────────────────────────────────────────┤
+│  初始状态 (可编辑):                                       │
+│  现金: [$200]  健康: [80]  心理: [70]  行动点: [5]         │
+│  已有债务: [0]  标记: []                                  │
+├──────────────────────────────────────────────────────────┤
+│  执行结果:                                                │
+│  ─────────────────────────────────────────────────────  │
+│  你看到了什么:                                            │
+│  "老乡介绍的财务公司位于一栋老旧写字楼的地下室..."          │
+│                                                           │
+│  可选行动:                                                │
+│  1. 借$500  → 现金+500, 新增债务(每期$55)                 │
+│  2. 借$1000 → 现金+1000, 新增债务(每期$130)               │
+│  3. 算了    → 无变化                                      │
+│                                                           │
+│  [选择选项1] [查看状态变化]                                │
+├──────────────────────────────────────────────────────────┤
+│  状态变化对比:                                            │
+│  现金: $200 → $700 (+$500) ✓                              │
+│  债务: 0 → 1 (每期还款$55，共10期)                        │
+│  风险: 若收入<$1100/月，可能违约                           │
+└──────────────────────────────────────────────────────────┘
+```
+
+**模块4：事件索引浏览器（Event Browser）**
+
+```typescript
+interface EventBrowserProps {
+  // 数据源
+  dataSource: {
+    events: GameEvent[];              // 所有事件
+    items: Item[];                    // 所有道具
+    scenes: SceneConfig[];            // 场景配置
+  };
+  
+  // 搜索筛选
+  filters: {
+    searchById: string;
+    searchByName: string;
+    filterByScene: SceneId[];
+    filterByCategory: EventCategory[];
+    filterByTags: string[];
+  };
+  
+  // 快速操作
+  actions: {
+    viewJson: (eventId: string) => void;      // 查看原始JSON
+    editInVSCode: (eventId: string) => void;  // 在VS Code中打开
+    copyToClipboard: (eventId: string) => void;
+    validateEvent: (eventId: string) => ValidationResult;
+  };
+}
+```
+
+#### 7.1.3 技术实现要求
+
+```typescript
+// 开发工具入口组件
+// src/devtools/Dashboard.tsx
+
+export function DevDashboard() {
+  // 仅在开发模式渲染
+  if (import.meta.env.PROD) {
+    return <Navigate to="/" />;
+  }
+  
+  return (
+    <div className="dev-dashboard">
+      <header>
+        <h1>《去美国》开发仪表盘</h1>
+        <span className="badge">DEV MODE ONLY</span>
+      </header>
+      
+      <nav>
+        <Tab id="graph" label="事件图谱" />
+        <Tab id="balance" label="数值平衡" />
+        <Tab id="sandbox" label="事件沙盒" />
+        <Tab id="browser" label="事件索引" />
+      </nav>
+      
+      <main>
+        <EventGraphPanel />
+        <BalancePanel />
+        <EventSandbox />
+        <EventBrowser />
+      </main>
+    </div>
+  );
+}
+```
+
+**路由配置**：
+```typescript
+// src/router.tsx
+import { DevDashboard } from './devtools/Dashboard';
+
+// 开发模式路由
+const devRoutes = import.meta.env.DEV ? [
+  { path: '/__devtools/dashboard', component: DevDashboard },
+] : [];
+```
+
+**数据加载**：
+```typescript
+// 直接读取 public/data 下的 JSON 文件
+// 使用 fetch 热重载，无需重启服务器
+
+async function loadEvents(): Promise<GameEvent[]> {
+  const response = await fetch('/data/events/act1.json');
+  const data = await response.json();
+  return data.events;
+}
+```
+
+#### 7.1.4 使用场景
+
+| 场景 | 使用工具 | 操作 |
+|------|---------|------|
+| 设计新事件链 | 事件图谱 | 验证链的完整性，检查是否有断链 |
+| 调整数值平衡 | 数值平衡面板 | 对比同类事件，确保收益/风险比例合理 |
+| 测试极端情况 | 事件沙盒 | 模拟濒死/贫困状态，测试事件是否会导致意外死亡 |
+| 查找相似事件 | 事件索引 | 按标签/场景筛选，避免重复设计 |
+| 验证 JSON 语法 | 事件索引 | 自动验证并提示错误位置和原因 |
+
+---
+
+### 7.2 开发者控制台（Dev Console）
+
+轻量级命令行工具，用于快速修改游戏状态和触发事件，作为 Web 仪表盘的补充。
+
+#### 7.2.1 访问方式
+
+```
+方式1：游戏内按 `~` 键调出 DevTools 悬浮窗，切换到"控制台"标签
+方式2：直接访问 http://localhost:5173/__devtools/console
+```
+
+#### 7.2.2 指令系统
+
+**指令格式**：`/command [subcommand] [arguments]`
+
+##### 资源修改指令
+
+```typescript
+// 修改基础资源
+/set <resource> <value>
+
+// 示例
+/set money 1000           // 设置现金为 $1000
+/set money +500           // 增加 $500
+/set money -200           // 减少 $200
+/set health 80            // 设置健康度为 80
+/set mental 60            // 设置心理度为 60
+/set actionPoints 5       // 设置行动点为 5
+
+// 修改属性（0-20范围）
+/set attribute physique 12    // 设置体魄为 12
+/set attribute english 8      // 设置英语为 8
+```
+
+##### 场景切换指令
+
+```typescript
+// 快速切换场景
+/scene <sceneId>
+
+// 示例
+/scene act1       // 切换到场景1（重置场景状态）
+/scene act2       // 切换到场景2
+/scene act3       // 切换到场景3
+
+// 带继承的切换（保留当前资源）
+/scene act3 --carry-over
+```
+
+##### 事件触发指令
+
+```typescript
+// 触发特定事件
+/event <eventId> [choiceId]
+
+// 示例
+/event act3_underground_loan           // 触发地下钱庄事件
+/event act3_underground_loan choice_1  // 直接选择选项1
+/event rand2_storm                     // 触发随机事件（无视条件）
+
+// 触发带预设状态的事件（用于测试边界）
+/event act3_underground_loan --preset bankrupt
+```
+
+##### 道具管理指令
+
+```typescript
+// 添加道具
+/give <itemId> [count]
+
+// 示例
+/give food_supply 5           // 添加5份食物补给
+/give perm_vehicle_ebike      // 添加电动车
+/give all                     // 添加所有道具（调试用）
+
+// 移除道具
+/remove <itemId> [count]
+
+// 示例
+/remove perm_vehicle_ebike    // 移除电动车
+/remove all                   // 移除所有道具
+
+// 列出所有道具
+/list items
+/list items --tag transport   // 列出交通工具类道具
+```
+
+##### 债务管理指令
+
+```typescript
+// 添加债务
+/debt add <principal> <interestRate> <turns> [lenderName]
+
+// 示例
+/debt add 500 0.3 10          // 借$500，利率30%，10期还清
+/debt add 1000 0.5 5 "张哥"    // 借$1000，利率50%，5期，债主张哥
+
+// 清偿债务
+/debt clear                   // 清除所有债务
+/debt clear <debtId>          // 清除特定债务
+
+// 查看债务
+/debt list                    // 列出所有债务
+```
+
+##### 状态标记指令
+
+```typescript
+// 设置标记
+/flag set <flagName> [value]
+
+// 示例
+/flag set gap_discovered true           // 设置缺口已发现
+/flag set visa_expired                  // 设置签证过期（布尔值默认真）
+/flag set debt_default_count 2          // 设置违约次数为2
+
+// 移除标记
+/flag remove <flagName>
+
+// 示例
+/flag remove gap_discovered
+
+// 列出所有标记
+/flag list
+```
+
+##### 检查点指令
+
+```typescript
+// 保存检查点
+/save <checkpointName>
+
+// 示例
+/save before_test             // 保存当前状态为"before_test"
+/save initial_state           // 保存初始状态
+
+// 加载检查点
+/load <checkpointName>
+
+// 示例
+/load before_test             // 恢复到"before_test"状态
+
+// 列出所有检查点
+/checkpoints
+
+// 删除检查点
+/delete <checkpointName>
+```
+
+##### 信息查询指令
+
+```typescript
+// 查看当前状态
+/status                       // 显示所有资源、属性、标记概要
+/status --full                // 显示完整状态（包括债务、道具详情）
+
+// 查看事件信息
+/info event <eventId>         // 显示事件详情
+/info event --all             // 列出所有事件ID
+
+// 查看可用指令帮助
+/help                         // 显示所有指令
+/help set                     // 显示 /set 指令详细说明
+```
+
+#### 7.2.3 控制台界面
+
+```
+┌──────────────────────────────────────────────────────────┐
+│  🛠️ DevTools                                    [—] [×]  │
+├──────────────────────────────────────────────────────────┤
+│  [仪表盘] [控制台] [日志] [状态]                         │
+├──────────────────────────────────────────────────────────┤
+│                                                          │
+│  > set money 1000                                       │
+│  ✓ 现金已设置为 $1000                                    │
+│                                                          │
+│  > scene act3                                           │
+│  ✓ 场景已切换到 act3                                     │
+│  ⚠ 警告：场景切换清空了常驻道具栏                         │
+│                                                          │
+│  > event act3_underground_loan                          │
+│  ✓ 事件已触发：地下钱庄借款                              │
+│  可用选项：                                              │
+│    1. 借$500 (每期$55)                                   │
+│    2. 借$1000 (每期$130)                                 │
+│    3. 算了                                               │
+│                                                          │
+│  > debt add 500 0.3 10                                  │
+│  ✓ 已添加债务：本金$500，利率30%，10期，每期$65           │
+│                                                          │
+│  > status                                               │
+│  📊 当前状态：                                           │
+│    现金: $1000 | 健康: 80 | 心理: 70 | 行动点: 3/5      │
+│    场景: act3 | 回合: 15                                │
+│    债务: 1笔 (每期$65)                                   │
+│    标记: gap_discovered, visa_expired                   │
+│                                                          │
+│  > _                                                    │
+│                                                          │
+└──────────────────────────────────────────────────────────┘
+```
+
+#### 7.2.4 技术实现
+
+```typescript
+// src/devtools/Console.tsx
+
+interface ConsoleCommand {
+  name: string;
+  description: string;
+  usage: string;
+  examples: string[];
+  execute: (args: string[]) => CommandResult;
+}
+
+// 指令注册中心
+class ConsoleCommandRegistry {
+  private commands: Map<string, ConsoleCommand> = new Map();
+  
+  register(command: ConsoleCommand) {
+    this.commands.set(command.name, command);
+  }
+  
+  execute(input: string): CommandResult {
+    const [cmd, ...args] = input.trim().split(/\s+/);
+    
+    if (!cmd.startsWith('/')) {
+      return { success: false, error: '指令必须以 / 开头' };
+    }
+    
+    const commandName = cmd.slice(1); // 去掉开头的 /
+    const command = this.commands.get(commandName);
+    
+    if (!command) {
+      return { success: false, error: `未知指令: ${commandName}，输入 /help 查看可用指令` };
+    }
+    
+    return command.execute(args);
+  }
+}
+
+// 使用示例
+const console = new ConsoleCommandRegistry();
+
+console.register({
+  name: 'set',
+  description: '修改游戏资源或属性',
+  usage: '/set <resource> <value>',
+  examples: ['/set money 1000', '/set health +20'],
+  execute: (args) => {
+    const [resource, value] = args;
+    // 修改游戏状态...
+    return { success: true, message: `${resource} 已设置为 ${value}` };
+  }
+});
+```
+
+**快捷键支持**：
+```typescript
+// 上下箭头切换历史指令
+// Tab 自动补全
+// Ctrl+L 清屏
+// Ctrl+C 取消当前输入
+```
+
+#### 7.2.5 与仪表盘的协作
+
+| 操作 | 推荐工具 | 原因 |
+|------|---------|------|
+| 快速修改资源 | **控制台** | 输入 `/set money 1000` 比打开面板点击更快 |
+| 查看事件关系 | **仪表盘** | 可视化图谱比指令列表更直观 |
+| 测试极端状态 | **控制台** | `/save` `/load` 检查点比手动重置高效 |
+| 对比数值平衡 | **仪表盘** | 表格对比比指令输出更易读 |
+| 触发特定事件 | **控制台** | `/event` 一步直达，仪表盘需要多步操作 |
 
 ---
 
