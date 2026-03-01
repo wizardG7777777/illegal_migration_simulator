@@ -78,8 +78,14 @@ interface SceneRuntimeData {
 // 【债务系统】跨场景数据传输结构
 // 注：Debt 类型定义详见 DebtSystemArchitecture.md
 interface CrossSceneData {
-  // 书籍池（全局唯一，必须保留）
+  // 跨场景保留的书籍池
   bookPool: Book[];
+  
+  // 【新增】跨场景携带的金钱
+  carriedMoney: {
+    cny: number;
+    usd: number;
+  };
   
   // 进行中的跨场景事件链
   crossSceneChains: ChainProgress[];
@@ -112,25 +118,8 @@ type SceneSpecificState = Act1State | Act2State | Act3State;
 
 // 场景1：国内准备阶段
 interface Act1State {
-  // 离境准备进度（0-100）
-  departureReadiness: number;
-  
-  // 已探索的离境方式
-  // 注：tourist_visa 需要通过【灵光一闪】事件解锁（智力≥7触发）
-  discoveredMethods: DepartureMethod[];
-  
-  // 灵光一闪触发标记
-  hasInsightTriggered: boolean;  // 是否已触发灵光一闪
-  
-  // 人脉网络建立情况
-  networkEstablished: {
-    snakehead: boolean;          // 是否认识蛇头
-    agent: boolean;              // 是否联系中介
-    onlineCommunity: boolean;    // 是否加入线上社群
-  };
-  
-  // 特殊标记：是否触发过直达场景3的事件
-  hasSkippedToAct3: boolean;
+  // 灵光一闪触发标记（解锁旅游签证路径）
+  hasInsightTriggered: boolean;
   
   // 【债务系统】场景1借贷状态
   hasTakenLoan: boolean;         // 是否已借过贷
@@ -154,17 +143,6 @@ interface Act2State {
   // UI展示："第 X 步 / 共 5 步" + 进度条 + 足迹标记
   progress: number;
   
-  // 是否雇佣向导（阶段1）
-  // - 每回合开始时自动扣除$50向导费
-  // - 回合结束时自动前进1步
-  // - 现金不足时无法选择向导带路
-  hasGuide: boolean;
-  
-  // 是否已获得货车司机联系（阶段2）
-  // - 在小镇花费$200获得
-  // - 持有后可选择货车偷渡穿越方式
-  hasBorderGuide: boolean;
-  
   // 物资储备（场景2起始时给予基础物资）
   supplyStatus: {
     water: number;               // 水量（天数）
@@ -172,10 +150,13 @@ interface Act2State {
     shelter: boolean;            // 是否有遮蔽
   };
   
+  // 边境墙缺口发现状态
+  gapDiscovered: boolean;        // 是否已发现边境墙漏洞（解锁沙漠缺口穿越）
+  
   // 已选择的穿越方式（阶段2选择后记录，用于结局标记）
   selectedCrossingMethod?: 'truck' | 'desert' | 'climb';
   
-  // 遭遇记录（避免重复遭遇同一事件，可选）
+  // 遭遇记录（避免重复遭遇同一事件）
   encounteredDangers: Set<string>;
   
   // 【债务系统】场景2借贷状态
@@ -196,14 +177,10 @@ interface Act2State {
 
 // 场景3：美国生存阶段
 interface Act3State {
-  // 身份状态
-  identityStatus: IdentityStatus;
-  
-  // 签证相关（直飞路径）
+  // 签证相关（直飞路径进入场景3时设置）
   visaStatus?: {
-    type: 'tourist' | 'student' | 'work' | null;
+    type: 'tourist' | 'student' | null;
     expiryTurns: number;         // 剩余有效回合（-1表示已过期）
-    schoolName?: string;         // 学校名称（学生签）
   };
   
   // 持续成本（学生签特有）
@@ -213,24 +190,6 @@ interface Act3State {
     currency: 'USD';
     lastPaid: number;            // 上次缴纳回合
     description: string;
-  };
-  
-  // 工作/收入来源
-  incomeSources: IncomeSource[];
-  
-  // 申请进度
-  applicationProgress: {
-    asylum?: AsylumProgress;
-    greenCardLottery?: LotteryProgress;
-    marriage?: MarriageProgress;
-    employment?: EmploymentProgress;
-  };
-  
-  // 社区关系
-  communityStanding: {
-    chineseCommunity: number;    // 华人社区声望
-    localCharity: number;        // 慈善机构关系
-    legalAid: number;            // 法律援助关系
   };
   
   // 生活成本（道具驱动）
@@ -250,23 +209,10 @@ interface Act3State {
     };
   };
   
-  // 故事标记（记录玩家的选择路径）
-  storyFlags: Set<string>;       // 记录玩家关键剧情选择
-  
   // 【债务系统】场景3债务追踪
   debtDefaultCount: number;          // 违约次数计数
   hasDebtWarningTriggered: boolean;  // 是否已触发第一次警告
 }
-
-type IdentityStatus = 
-  | 'undocumented'       // 非法入境
-  | 'tourist_visa'       // 旅游签（有期限）
-  | 'student_visa'       // 学生签（需持续交学费）
-  | 'unknown'            // 神秘身份（奇迹事件）
-  | 'pending'            // 申请中
-  | 'temporary_protected' // 临时保护
-  | 'asylum_granted'     // 庇护获批
-  | 'green_card';        // 绿卡（通关）
 
 interface AsylumProgress {
   stage: 'consultation' | 'preparation' | 'submitted' | 'interview_scheduled' | 'interview_done' | 'decision';
@@ -748,7 +694,7 @@ class SceneTransitionManager {
     // 7. 初始化新场景状态
     this.initializeSceneState(to);
     
-    // 8. 根据切换路径给予对应的启动物资
+    // 8. 根据切换路径给予对应的启动物资（金钱从CrossSceneData继承，只给道具和食物）
     this.giveStarterKitByTransitionType(to, from, transitionType);
     
     // 9. 恢复跨场景数据
@@ -807,17 +753,17 @@ class SceneTransitionManager {
   }
   
   /**
-   * 根据切换路径给予启动物资
+   * 根据切换路径给予启动物资（金钱从CrossSceneData继承，只给道具和状态）
    */
   private giveStarterKitByTransitionType(to: SceneId, from: SceneId, transitionType?: string): void {
     if (to === 'act3') {
       // 根据路径给予不同的场景3起始包
+      // 注意：金钱从CrossSceneData.carriedMoney继承，此处不设置
       switch (transitionType) {
         case 'tourist':
           // 旅游签直飞
-          this.character.resources.money.usd = 2000 + Math.random() * 3000;
           this.character.inventory.permanents.addItem(ItemDatabase.getPermanent('hotel_booking'));
-          this.character.status.identityStatus = 'tourist_visa';
+          // 旅游签初始有6回合合法身份，之后转为黑户
           this.character.status.visaExpiry = 6;  // 6回合签证倒计时
           // 签证到期后转为黑户，不直接游戏结束，但持续扣除心理健康
           this.character.status.onVisaExpiry = {
@@ -828,10 +774,8 @@ class SceneTransitionManager {
           break;
           
         case 'student':
-          // 学生签直飞（野鸡大学）- 初始资金比旅游签少，因为学费花掉了大部分
-          this.character.resources.money.usd = 800 + Math.random() * 1200;  // $800-2000
+          // 学生签直飞（野鸡大学）
           this.character.inventory.permanents.addItem(ItemDatabase.getPermanent('dorm_key'));
-          this.character.status.identityStatus = 'student_visa';
           
           // 检查是否有分期付款尾款（付给中介）
           if (this.character.flags.student_visa_installment) {
@@ -842,7 +786,6 @@ class SceneTransitionManager {
             } else {
               log("警告：你无法支付中介尾款，学校不允许你注册！");
               log("你的学生签证失效，转为非法滞留（黑户）。");
-              this.character.status.identityStatus = 'undocumented';
               // 转为黑户后持续扣除心理健康，但不直接游戏结束
               this.character.status.mentalDecay = 4;  // 黑户压力每回合-4
             }
@@ -863,34 +806,25 @@ class SceneTransitionManager {
           };
           break;
           
-        case 'guide':
-          // 走线+向导
-          this.character.resources.money.usd = 200 + Math.random() * 600;
-          this.character.status.identityStatus = 'undocumented';
+        case 'truck':
+          // 货车偷渡：无道具，金钱继承
           this.character.status.storyFlags.add('guided_crossing');
           break;
           
-        case 'gap':
-          // 走线+漏洞
-          this.character.resources.money.usd = 300 + Math.random() * 700;
+        case 'desert':
+          // 沙漠缺口：起始地点加州，金钱继承
+          this.character.status.startLocation = 'california';
           this.character.status.identityStatus = 'undocumented';
-          // 漏洞穿越进入场景3
           break;
           
         case 'climb':
-          // 走线+攀爬
-          this.character.resources.money.usd = 300 + Math.random() * 700;
-          this.character.status.identityStatus = 'undocumented';
-          // 攀爬边境墙进入场景3
-          // 攀爬可能受伤
+          // 攀爬边境墙：健康-20，金钱继承
           this.character.resources.health.current -= 20;
+          this.character.status.identityStatus = 'undocumented';
           break;
           
         case 'miracle':
-          // 随机奇迹
-          this.character.resources.money.usd = Math.random() * 500;
-          this.character.status.identityStatus = 'unknown';
-          // 奇迹事件进入场景3
+          // 随机奇迹：无道具，金钱继承（以神秘身份入境）
           break;
           
         default:
@@ -898,10 +832,8 @@ class SceneTransitionManager {
           this.giveStarterKit(to);
       }
     } else if (to === 'act2') {
-      // 场景2起始包（走线）
-      this.character.resources.money.usd = 500 + Math.random() * 500;  // 剩余人民币兑换
-      this.character.inventory.consumables.addItem('water', 1);
-      this.character.inventory.consumables.addItem('biscuit', 3);
+      // 场景2起始包（走线）：5份食物补给
+      this.character.inventory.consumables.addItem('food_supply', 5);
       this.character.inventory.permanents.addItem(ItemDatabase.getPermanent('basic_compass'));
     } else {
       // 其他场景使用默认配置
@@ -2124,9 +2056,9 @@ const SCENE_CONFIGS: Record<SceneId, SceneConfig> = {
     currency: 'CNY',
     environmentalDebuff: DEBUFF_ACT1_SITTING_DUCK,
     starterKit: {
-      consumables: [],
-      initialMoney: 2000,          // 初始2000人民币
-      permanents: []
+      foodSupply: 0,               // 食物补给数量（统一消耗品，回复身体健康）
+      initialMoney: 2000,          // 初始金钱（仅首次进入场景时使用）
+      permanents: []               // 初始常驻道具ID列表
     }
   },
   
@@ -2142,12 +2074,9 @@ const SCENE_CONFIGS: Record<SceneId, SceneConfig> = {
     currency: 'USD',
     environmentalDebuff: DEBUFF_ACT2_ENVIRONMENT,
     starterKit: {
-      consumables: [
-        { id: 'water', count: 3 },
-        { id: 'biscuit', count: 2 }
-      ],
+      foodSupply: 5,               // 5份食物补给
       initialMoney: 0,             // 场景2启动不给钱
-      permanents: []
+      permanents: ['basic_compass'] // 初始常驻道具：基础指南针
     }
   },
   
@@ -2162,17 +2091,17 @@ const SCENE_CONFIGS: Record<SceneId, SceneConfig> = {
     },
     currency: 'USD',
     environmentalDebuff: DEBUFF_ACT3_CRACKDOWN,
-    // 场景3起始包根据切换路径不同而变化：
-    // - 走线+货车偷渡: $200-800, 无道具, 非法入境（最安全）
-    // - 走线+沙漠缺口: $300-1000, 无道具, 非法入境, 起始地点加州（高风险，靠生存能力）
-    // - 走线+攀爬边境墙: $300-1000, 无道具, 非法入境, 健康-20（钢柱灼伤+磕碰伤）
-    // - 旅游签直飞: $2000-5000, 旅馆预订, 合法6回合,逾期转黑户(-3SAN/回合)
-    // - 学生签直飞: $800-2000, 宿舍钥匙, 合法入学(4期学费每6回合$4000,逾期转黑户(-4SAN/回合)
-    // - 随机奇迹: $0-500, 无道具, 神秘身份
+    // 场景3起始包根据切换路径不同而变化（金钱从CrossSceneData继承）：
+    // - 走线+货车偷渡: 无道具, 非法入境（最安全）
+    // - 走线+沙漠缺口: 无道具, 非法入境, 起始地点加州（高风险，靠生存能力）
+    // - 走线+攀爬边境墙: 无道具, 非法入境, 健康-20（钢柱灼伤+磕碰伤）
+    // - 旅游签直飞: 旅馆预订, 合法6回合,逾期转黑户(-3SAN/回合)
+    // - 学生签直飞: 宿舍钥匙, 合法入学(4期学费每6回合$4000,逾期转黑户(-4SAN/回合)
+    // - 随机奇迹: 无道具, 神秘身份
     starterKit: {
-      consumables: [],
-      initialMoney: 200,           // 默认值，实际根据切换路径覆盖
-      permanents: []
+      foodSupply: 0,               // 场景3不给予食物补给
+      initialMoney: 0,             // 金钱从CrossSceneData继承
+      permanents: []               // 根据切换路径给予不同道具
     }
   }
 };

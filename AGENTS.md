@@ -127,7 +127,7 @@ PlanDoc/
 |-----|---------|---------|------|
 | `RANDOM` | 回合开始自动触发 | 有冷却/次数限制 | 暴雨、警察临检 |
 | `FIXED` | 玩家主动选择 | 可配置 | 打工、读书、购买 |
-| `CHAIN` | 前置事件完成后 | 链内顺序 | 庇护申诉I→II→III |
+| `CHAIN` | 前置事件完成后延迟解锁 | 链内顺序，变为FIXED后玩家自主选择 | 庇护申诉I→II→III |
 | `POLICY_PRESSURE` | 场景3回合开始（场景回合限制） | 通常1次 | 特朗普政策公告 |
 
 #### 物品槽位系统
@@ -404,7 +404,61 @@ slots:
     description: 选择交通工具可提高移动效率
 ```
 
-#### 7.1.5 事件选项（Choices）字段
+#### 7.1.5 链式事件（CHAIN）特有字段
+
+链式事件用于实现多步骤任务流程。完成链中的当前事件后，经过指定延迟，下一个事件以 `FIXED` 类型解锁，玩家可自主选择何时执行。
+
+| 字段 | 类型 | 必需 | 说明 | 示例 |
+|-----|------|------|------|------|
+| `chain.chainId` | string | ✅ | 链的唯一标识 | `chain_asylum_application` |
+| `chain.stepIndex` | number | ✅ | 当前事件在链中的步骤索引 | `0` 表示第一步 |
+| `chain.nextEventId` | string | ✅ | 下一步要解锁的事件ID | `act3_asylum_step2` |
+| `chain.unlockDelay` | number | ❌ | 解锁延迟回合数（默认0） | `3` 表示3回合后解锁 |
+
+**链式事件工作原理**：
+```
+玩家执行链事件A（step 0）
+    ↓
+系统记录到 activeChains：
+  - unlockEventId: 事件B
+  - unlockDelay: 3
+  - unlockTurn: 当前回合 + 3
+    ↓
+每回合开始检查 unlockTurn
+    ↓
+到达指定回合：事件B以FIXED类型出现在可选列表
+    ↓
+玩家自主选择执行事件B的时机（或选择不执行）
+```
+
+**完整示例**：
+```yaml
+id: act3_asylum_step1
+category: CHAIN
+name: 提交庇护申请
+chain:
+  chainId: asylum_application
+  stepIndex: 0
+  nextEventId: act3_asylum_step2
+  unlockDelay: 5          # 5回合后解锁下一步
+effect:
+  - type: MODIFY_RESOURCE
+    resource: mentalHealth
+    value: -5
+    description: "提交申请的紧张感"
+
+---
+
+id: act3_asylum_step2
+category: FIXED          # 解锁后变为FIXED类型
+name: 补交材料通知
+trigger:
+  condition: CHAIN_UNLOCKED
+  chainId: asylum_application
+  stepIndex: 1
+```
+
+#### 7.1.6 事件选项（Choices）字段
 
 每个选项需要定义：
 
@@ -444,7 +498,7 @@ effect:
     sceneTransition: null
 ```
 
-#### 7.1.6 政策压力事件（POLICY_PRESSURE）特有字段（仅场景3）
+#### 7.1.7 政策压力事件（POLICY_PRESSURE）特有字段（仅场景3）
 
 | 字段 | 类型 | 必需 | 说明 | 示例 |
 |-----|------|------|------|------|
@@ -558,6 +612,38 @@ useCost:
   actionPoint: 0
   money: 0
 ```
+
+#### 标准消耗品：食物补给
+
+**物品ID**: `consumable_food_supply`
+
+**基础字段**：
+```yaml
+id: consumable_food_supply
+name: 食物补给
+description: 维持生命的基本物资，面包、罐头、压缩饼干的统称。可以缓解饥饿并略微恢复身体健康。
+category: CONSUMABLE
+subCategory: food
+maxStack: 10
+useTarget: self
+tags: [food]
+priority: 5
+
+effects:
+  healthRestore: 5      # 回复5点身体健康度
+  mentalRestore: 0
+  actionPointRestore: 0
+
+useCost:
+  actionPoint: 0
+  money: 0
+```
+
+**设计说明**：
+- 所有场景中的消耗品统一为"食物补给"
+- 不再区分水、饼干、止痛药等不同物品
+- 获取途径：购买、事件奖励、起始包
+- 回复量固定为5点健康值（可通过事件效果调整）
 
 #### 7.2.3 常驻型道具（PERMANENT）字段
 
@@ -673,7 +759,7 @@ effects:
 | `transport` | 交通工具事件 | 电动车、二手车、公交卡 |
 | `lodging` | 住宿场所（场景3生活成本） | 合租房间、公寓 |
 | `medical` | 医疗事件 | 止痛药、绷带、抗生素 |
-| `food` | 食物补给 | 压缩饼干、罐头 |
+| `food` | 食物补给（统一消耗品） | 食物补给 |
 | `book` | 读书事件（书籍必须有） | 《英语900句》 |
 | `tool` | 工具类事件 | 扳手、螺丝刀 |
 | `weapon` | 战斗/防御事件 | 匕首、辣椒喷雾 |
@@ -692,6 +778,7 @@ effects:
 | 0-1 | 任务关键道具、高品质道具 | 特斯拉（vs 二手车） |
 | 2-3 | 常用优质道具 | 公寓（vs 合租） |
 | 4-5 | 普通道具 | 电动车、超市购物袋 |
+| 5 | 普通消耗品 | 食物补给 |
 | 6-7 | 临时/劣质道具 | 收容所床位 |
 | 8-9 | 消耗品、备选道具 | 一次性雨衣 |
 

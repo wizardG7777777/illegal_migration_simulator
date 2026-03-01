@@ -306,7 +306,7 @@ export const LIVING_COST_TIERS = {
 | `act3_lodge_blackhotel` | 家庭旅馆住宿 | 居住 | `key_blackhotel` | - |
 | `act3_lodge_apartment` | 正规租房 | 居住 | `fake_lease`, `key_apartment` | 生存能力+ |
 | `act3_identity_fake` | 办理假证件 | 身份 | 社交≥5 | - |
-| `act3_identity_rent_uber` | 租用Uber账号 | 身份 | `fake_ssn` | - |
+| `act3_identity_rent_uber` | 租用Uber账号 | 身份 | **无**`fake_ssn` | 收入减半，无证件替代方案 |
 | `act3_identity_asylum` | 申请政治庇护（旧版） | 通关 | 现金≥1000 | **已废弃** - 请使用新版事件链 |
 | `act3_social_church` | 参加华人教会活动 | 社交 | - | 社交+, 心理健康+ |
 | `act3_social_chat` | 水群 | 社交/信息 | 无 | 社交+, 心理健康+, 水群计数+1 |
@@ -322,7 +322,7 @@ export const LIVING_COST_TIERS = {
 |---|-----|------|---------|---------|
 | `act3_living_cost` | 每月生活成本扣除 | FIXED(系统) | 每月1日(每30回合)自动 | 食品$400+住宿+出行 |
 | `act3_inflation_trigger` | 通胀Debuff触发 | RANDOM | 回合>20, 每10回合20%概率 | 最多3层, 成本+30% |
-| `rand3_ice_raid` | ICE突袭检查 | RANDOM | 压力≥2时触发(undocumented) | 躲藏/假装/逃跑选择 |
+| `rand3_ice_raid` | ICE突袭检查 | RANDOM | 场景3随机触发（与身份状态无关） | 躲藏/假装/逃跑选择 |
 | ~~`act3_deportation_process`~~ | ~~遣返流程链~~ 【已废弃】 | ~~CHAIN~~ | ~~ICE突袭失败被捕~~ | ~~拘留→法庭→遣返/暂缓~~ |
 | `ending_arrested` | 被捕入狱终局 | SYSTEM | ICE突袭失败被捕 | 入狱即终局（无保释/遣返） |
 | `act3_visa_overstay` | 签证过期处理 | SYSTEM | 签证倒计时归零 | 旅游签6回/学签15回+学费 |
@@ -381,7 +381,7 @@ export const LIVING_COST_TIERS = {
 |---|-----|------|---------|
 | `rand3_highpay_job` | 老乡介绍高薪工作 | 正面 | 社交≥7时概率增加 |
 | `rand3_food_bank` | 教会食物银行 | 正面 | 15%概率 |
-| `rand3_account_banned` | 账号被封 | 负面 | `uber_driver`时概率 |
+| `rand3_account_banned` | 账号被封 | 负面 | 执行Uber工作时触发 |
 | `rand3_fake_exposed` | 假证件被识破 | 负面 | `fake_ssn`时概率 |
 | `rand3_eviction` | 房东涨租/驱赶 | 负面 | `fake_lease`时概率增加 |
 | `rand3_robbery` | 被抢劫 | 负面 | `debit_card`减少概率 |
@@ -679,7 +679,8 @@ function calculateEventStats(event, player) {
 | 道具ID | 属性标签 | 优先级 | 可匹配槽位 | 槽位效果 |
 |-------|---------|-------|-----------|---------|
 | `fake_ssn` | `identity` | 1 | identity_slot | 基础收入+50%, 60%过检查 |
-| `uber_driver` | `identity` | 1 | identity_slot | 解锁Uber, 收入+120, 有封号风险 |
+| `uber_driver` | `identity` | 1 | identity_slot | 自己注册Uber, 收入+120, 被封删fake_ssn |
+| `uber_rented` | `identity` | 2 | identity_slot | 租用Uber账号, 收入+60, 被封无收入 |
 | `badge_warehouse` | `identity` | 2 | identity_slot | 行动点-1, 基础收入+70 |
 | `lodging_shelter` | `lodging` | 5 | lodging_slot | 免费住宿, ICE突袭风险+20% | `act3_lodge_shelter` |
 | `fake_lease` | `document`/`lodging` | 1 | lodging_slot | 生存能力+2, 解锁正规租房 |
@@ -812,7 +813,7 @@ function calculateEventStats(event, player) {
 |--------|------|------|------|
 | `act3_living_cost` | 每月生活成本扣除 | 系统 | 每月1日自动扣除 |
 | `act3_inflation_trigger` | 通胀Debuff触发 | RANDOM | 回合>20，最多3层 |
-| `rand3_ice_raid` | ICE突袭 | RANDOM | 身份undocumented时触发 |
+| `rand3_ice_raid` | ICE突袭 | RANDOM | 场景3随机触发（与身份状态无关） |
 | ~~`act3_deportation_process`~~ | ~~遣返流程~~ 【已废弃/未实现】 | ~~CHAIN~~ | ~~场景3采用入狱即终局，无遣返流程~~ |
 | `act3_visa_overstay` | 签证过期处理 | RANDOM | 旅游签/学签到期触发 |
 | `act3_lodge_shelter` | 收容所床位 | FIXED | 现金<$50时可用 |
@@ -891,7 +892,7 @@ function calculateEventStats(event, player) {
 | `act2_transition_visa` | 签证过渡 | CHAIN | 持有`fake_diploma` | ✅ 已索引 |
 | `act3_living_cost` | 每月生活成本 | FIXED | 每月1日系统触发 | ✅ 已索引 |
 | `act3_inflation_trigger` | 通胀触发 | RANDOM | 回合>20，20%/10回合 | ✅ 已索引 |
-| `rand3_ice_raid` | ICE突袭 | RANDOM | 压力≥2时触发 | ✅ 已索引 |
+| `rand3_ice_raid` | ICE突袭 | RANDOM | 场景3随机触发 | ✅ 已索引 |
 | `act3_visa_overstay` | 签证过期 | SYSTEM | 签证倒计时 | ✅ 已索引 |
 | `act3_lodge_shelter` | 收容所床位 | FIXED | 现金<$50 | ✅ 已索引 |
 

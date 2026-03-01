@@ -601,6 +601,53 @@ ui:
   icon: "🗺️"
 ```
 
+#### act2_town_find_gap - 寻找边境墙漏洞
+
+```yaml
+id: act2_town_find_gap
+type: FIXED
+trigger:
+  condition: SCENE
+  sceneId: act2
+  stage: 2
+cost:
+  actionPoints: 2
+effect:
+  - type: MODIFY_RESOURCE
+    resource: mentalHealth
+    value: -3
+    description: "奔波的疲惫和不确定性"
+  - type: CHANCE_BASED
+    probability: 0.2
+    success:
+      effects:
+        - type: SET_FLAG
+          flag: gap_discovered
+          value: true
+          description: "你发现了边境墙的缺口！在东南方向约两英里处，有一段墙体因暴雨冲刷而倒塌，足以让一个人钻过去。"
+        - type: MODIFY_RESOURCE
+          resource: mentalHealth
+          value: 5
+          description: "发现缺口的兴奋"
+      description: "经过数小时的搜索，你在一处偏僻地段发现了边境墙的破损缺口"
+    failure:
+      effects:
+        - type: MODIFY_RESOURCE
+          resource: mentalHealth
+          value: -5
+          description: "一无所获的沮丧"
+      description: "你找遍了小镇周围，但没有发现任何可以利用的缺口"
+description: |
+  你在小镇里东奔西走，逢人就问边境墙的情况。
+  
+  有人说墙固若金汤，有人说曾经听说有缺口，还有人说那是骗钱的陷阱。
+  
+  你决定亲自去找找看。
+ui:
+  title: "寻找边境墙漏洞"
+  description: "在小镇周围寻找边境墙的破损缺口（20%成功率）"
+```
+
 #### act2_town_buy_supplies - 补充物资
 
 ```yaml
@@ -792,6 +839,9 @@ trigger:
   condition: SCENE
   sceneId: act2
   stage: 2
+  requiredFlags:
+    - flag: gap_discovered
+      value: true
 cost:
   actionPoints: 4
 checks:
@@ -811,7 +861,11 @@ checks:
       endingId: death_desert_crossing
       description: "第三天你倒在沙地上，喉咙像塞了一把烧红的刀子..."
 description: |
-  你在小镇的酒吧里听到了一个传闻——边境墙有一段因年久失修而倒塌，形成一个足以容人通过的缺口。但穿过那堵墙后，等待你的是一片广袤的沙漠。
+  你已经找到了边境墙的缺口——几根钢筋扭曲着指向天空，混凝土碎块散落在沙地上。
+  
+  现在你必须做出选择：是冒险穿过缺口后的沙漠，还是寻找其他方式？
+  
+  你在小镇的酒吧里听到了这个传闻——边境墙有一段因年久失修而倒塌，形成一个足以容人通过的缺口。但穿过那堵墙后，等待你的是一片广袤的沙漠。
   
   "那边没有人巡逻，"酒保压低声音说，"但也没人能从那片沙漠里活着走出来。上个月有三个人试过，只找到一个脱水而死的。"
   
@@ -1360,6 +1414,7 @@ ui:
 | act2_move_solo | 阶段1前进 | 独自穿越 |
 | act2_town_contact_driver | 阶段2活动 | 联系货车司机 |
 | act2_town_gather_info | 阶段2活动 | 打探消息 |
+| act2_town_find_gap | 阶段2活动 | 寻找边境墙漏洞 |
 | act2_town_buy_supplies | 阶段2活动 | 补充物资 |
 | act2_town_wait | 阶段2活动 | 等待时机 |
 | act2_cross_truck | 阶段2穿越 | 货车偷渡 |
