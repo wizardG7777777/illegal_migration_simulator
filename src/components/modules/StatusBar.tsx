@@ -93,13 +93,11 @@ export const StatusBar = React.memo(function StatusBar() {
   // 提取数据
   const { 
     currentScene, 
-    sceneTurn, 
     turnCount, 
     activeDebuffs 
   } = state.scene;
   
   const { 
-    name,
     resources 
   } = state.character;
   

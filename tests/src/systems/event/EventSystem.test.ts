@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EventSystem } from '../../../../src/systems/event/EventSystem';
 import { dataLoader } from '../../../../src/systems/loader/DataLoader';
-import type { GameState, GameEvent, EventChoice } from '../../../../src/types';
+import type { GameState, GameEvent } from '../../../../src/types';
 
 // Mock DataLoader
 vi.mock('../../../../src/systems/loader/DataLoader', () => ({

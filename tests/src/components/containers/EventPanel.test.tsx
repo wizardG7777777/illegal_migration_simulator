@@ -40,9 +40,9 @@ const mockEvent: GameEvent = {
   },
   slots: [],
   choices: [
-    { id: 'c1', name: 'Choice 1' },
+    { id: 'c1', name: 'Choice 1', effects: {} },
   ],
-  scenes: ['scene1'],
+  scenes: ['act1'],
 };
 
 const mockChainEvent: GameEvent = {
@@ -51,13 +51,14 @@ const mockChainEvent: GameEvent = {
   description: 'Chain Description',
   category: 'CHAIN',
   execution: {
+    repeatable: false,
     actionPointCost: 0,
   },
   slots: [],
   choices: [
-    { id: 'c2', name: 'Chain Choice' },
+    { id: 'c2', name: 'Chain Choice', effects: {} },
   ],
-  scenes: ['scene1'],
+  scenes: ['act1'],
 };
 
 describe('EventPanel Component', () => {

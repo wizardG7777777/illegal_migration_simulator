@@ -11,18 +11,6 @@
  * - 道具：{分类}_{描述} 如 `consumable_painkiller`, `perm_backpack`
  */
 
-// 有效场景ID列表
-const VALID_SCENES = ['act1', 'act2', 'act3'] as const;
-type ValidScene = (typeof VALID_SCENES)[number];
-
-// 有效事件类型列表
-const VALID_EVENT_TYPES = ['work', 'random', 'fixed', 'chain', 'policy', 'item', 'social', 'study'] as const;
-type ValidEventType = (typeof VALID_EVENT_TYPES)[number];
-
-// 有效道具分类前缀
-const VALID_ITEM_PREFIXES = ['consumable', 'perm', 'book'] as const;
-type ValidItemPrefix = (typeof VALID_ITEM_PREFIXES)[number];
-
 // ID 格式正则表达式
 const EVENT_ID_REGEX = /^(act[123]|rand[123])_([a-z]+)_[a-z0-9_]+$/;
 const POLICY_ID_REGEX = /^act[123]_policy_\d{3}$/;

@@ -62,22 +62,6 @@ export interface GameMeta {
 }
 
 /**
- * 角色数据（完整定义）
- */
-export interface CharacterData {
-  /** 角色ID */
-  id: string;
-  /** 角色名称 */
-  name: string;
-  /** 六维属性 */
-  attributes: Attributes;
-  /** 资源 */
-  resources: Resources;
-  /** 角色状态 */
-  status: CharacterStatus;
-}
-
-/**
  * 场景状态
  */
 export interface SceneState {

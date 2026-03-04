@@ -35,14 +35,12 @@ import { Button } from '../primitives/Button';
  * 角色面板组件
  */
 const CharacterPanel = React.memo(function CharacterPanel({ 
-  onOpenBackpack, 
   onEndTurn, 
   inventoryCount, 
   hasPendingRandomEvent,
   inventory,
   onUseItem
-}: { 
-  onOpenBackpack: () => void;
+}: {
   onEndTurn: () => void;
   inventoryCount: number;
   hasPendingRandomEvent: boolean;
@@ -273,12 +271,6 @@ export const GamePage = React.memo(function GamePage() {
     useConsumable(itemId);
   }, [useConsumable]);
   
-  // 处理打开背包
-  const handleOpenBackpack = useCallback(() => {
-    // 现在背包功能直接在角色面板中，不需要打开模态框
-    // 保留这个函数用于兼容性
-  }, []);
-  
   // 处理关闭背包
   const handleCloseBackpack = useCallback(() => {
     setIsBackpackOpen(false);
@@ -337,7 +329,6 @@ export const GamePage = React.memo(function GamePage() {
           <div className="lg:col-span-4 xl:col-span-3 space-y-4">
             {/* 角色面板 - 现在包含按钮和切换功能 */}
             <CharacterPanel 
-              onOpenBackpack={handleOpenBackpack}
               onEndTurn={handleEndTurn}
               inventoryCount={inventory.consumables.reduce((s, c) => s + c.count, 0) + inventory.permanents.length}
               hasPendingRandomEvent={hasPendingRandomEvent}

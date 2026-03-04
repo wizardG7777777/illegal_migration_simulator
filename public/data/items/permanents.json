@@ -112,6 +112,45 @@
           }
         ]
       }
+    },
+    {
+      "id": "basic_compass",
+      "name": "基础指南针",
+      "description": "一个简单的磁针指南针，在雨林和沙漠中能帮助辨别方向。虽然不高级，但关键时刻能救命。",
+      "category": "PERMANENT",
+      "tags": ["tool", "guide"],
+      "priority": 2,
+      "canBeDeleted": false,
+      "slotEffects": {
+        "checkBonus": {
+          "survival": 2
+        },
+        "successRateModifier": 0.1
+      }
+    },
+    {
+      "id": "hotel_booking",
+      "name": "酒店预订确认单",
+      "description": "拉斯维加斯一家中档酒店的三晚预订确认单。旅游签入境时的临时落脚点，每晚120美元。",
+      "category": "PERMANENT",
+      "tags": ["lodging", "document"],
+      "priority": 1,
+      "canBeDeleted": false,
+      "upkeepCost": {
+        "moneyPerTurn": 40
+      }
+    },
+    {
+      "id": "dorm_key",
+      "name": "学生宿舍钥匙",
+      "description": "社区大学学生宿舍的钥匙，月租800美元。虽然房间很小，但能提供学生身份所需的住宿证明。",
+      "category": "PERMANENT",
+      "tags": ["lodging", "identity"],
+      "priority": 1,
+      "canBeDeleted": false,
+      "upkeepCost": {
+        "moneyPerTurn": 27
+      }
     }
   ]
 }

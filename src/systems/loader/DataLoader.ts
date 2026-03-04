@@ -353,7 +353,7 @@ export class DataLoader {
   public getEventsByTag(tag: string): GameEvent[] {
     this.ensureLoaded();
     return this.getAllEvents().filter(
-      event => event.tags && event.tags.includes(tag as ItemTag)
+      event => event.tags && event.tags.includes(tag as unknown as import('../../types/event').EventTag)
     );
   }
 

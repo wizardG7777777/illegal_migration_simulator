@@ -68,6 +68,18 @@ export function DevToolsOverlay() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // 监听来自仪表盘的添加道具事件
+  useEffect(() => {
+    const handleAddItem = (e: CustomEvent<{ itemId: string; count: number }>) => {
+      const { itemId, count } = e.detail;
+      store.devAddItem(itemId, count);
+      console.log(`✓ 已添加道具: ${itemId} x${count}`);
+    };
+
+    window.addEventListener('dev:addItem', handleAddItem as EventListener);
+    return () => window.removeEventListener('dev:addItem', handleAddItem as EventListener);
+  }, [store]);
+
   // 快捷操作
   const addMoney = (amount: number) => {
     const currentScene = state.scene.currentScene;

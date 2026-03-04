@@ -19,7 +19,6 @@ import type {
   GameEvent,
   EventChoice,
   ChainConfig,
-  EventCondition,
   ActiveChain,
   ResourceEffect,
 } from '../../types';
@@ -382,8 +381,8 @@ export const EventSystem = {
    */
   applySlotEffects(
     state: GameState,
-    event: GameEvent,
-    slotSelections: Record<string, string>
+    _event: GameEvent,
+    _slotSelections: Record<string, string>
   ): GameState {
     // 槽位效果的具体实现依赖于事件配置
     // 这里可以扩展槽位效果的处理逻辑

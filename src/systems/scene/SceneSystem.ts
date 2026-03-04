@@ -15,7 +15,6 @@
 import type {
   GameState,
   SceneId,
-  SceneConfig,
   Act1State,
   Act2State,
   Act3State,
@@ -37,33 +36,33 @@ import { CharacterSystem } from '../character/CharacterSystem';
 /** 汇率：1 CNY = 0.14 USD（约7:1） */
 const EXCHANGE_RATE = 0.14;
 
-/** 场景配置 */
-const SCENE_CONFIGS: Record<SceneId, SceneConfig> = {
-  act1: {
-    currency: 'CNY',
-    starterKit: {
-      foodSupply: 0,           // 场景1不提供初始食物
-      initialMoney: 2000,      // 人民币初始资金
-      permanents: []           // 无初始常驻道具
-    }
-  },
-  act2: {
-    currency: 'USD',
-    starterKit: {
-      foodSupply: 5,           // 5份食物补给
-      initialMoney: 0,         // 金钱从场景1继承（汇率兑换）
-      permanents: ['basic_compass']  // 基础指南针
-    }
-  },
-  act3: {
-    currency: 'USD',
-    starterKit: {
-      foodSupply: 0,           // 食物继承自场景2
-      initialMoney: 0,         // 金钱继承自场景2
-      permanents: []           // 无初始常驻道具
-    }
-  }
-};
+// 场景配置保留供将来使用
+// const SCENE_CONFIGS: Record<SceneId, SceneConfig> = {
+//   act1: {
+//     currency: 'CNY',
+//     starterKit: {
+//       foodSupply: 0,
+//       initialMoney: 2000,
+//       permanents: []
+//     }
+//   },
+//   act2: {
+//     currency: 'USD',
+//     starterKit: {
+//       foodSupply: 5,
+//       initialMoney: 0,
+//       permanents: ['basic_compass']
+//     }
+//   },
+//   act3: {
+//     currency: 'USD',
+//     starterKit: {
+//       foodSupply: 0,
+//       initialMoney: 0,
+//       permanents: []
+//     }
+//   }
+// };
 
 /** 基础生活成本（美元/月） */
 const BASELINE_COSTS = {
@@ -559,18 +558,18 @@ export const SceneSystem = {
    */
   handleDebtTransition(
     state: GameState,
-    _from: SceneId,
+    from: SceneId,
     to: SceneId
   ): GameState {
     const newState = deepClone(state);
 
-    if (_from === 'act1' && to === 'act2') {
+    if (from === 'act1' && to === 'act2') {
       // 场景1债务清零（无法追讨）
       if (newState.scene.act1) {
         newState.scene.act1.hasTakenLoan = false;
         newState.scene.act1.loanAmount = 0;
       }
-    } else if (_from === 'act2' && to === 'act3') {
+    } else if (from === 'act2' && to === 'act3') {
       // 场景2债务带入场景3（记录违约次数）
       const act2State = newState.scene.act2;
       if (act2State && act2State.hasTakenEmergencyLoan) {
@@ -595,14 +594,14 @@ export const SceneSystem = {
   giveStarterKitByTransitionType(
     state: GameState,
     to: SceneId,
-    from: SceneId,
+    _from: SceneId,
     transitionType?: string
   ): GameState {
     let newState = deepClone(state);
 
     if (to === 'act2') {
       // 场景2：给予食物补给和基础道具
-      newState = ItemSystem.addItem(newState, 'consumable_food_supply', 5);
+      newState = ItemSystem.addItem(newState, 'food_supply', 5);
       newState = ItemSystem.addPermanentItem(newState, 'basic_compass');
     } else if (to === 'act3') {
       // 场景3：根据切换类型给予特定道具

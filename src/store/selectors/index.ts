@@ -21,11 +21,9 @@ import type {
   EventChoice,
   TerminalState,
   EnvironmentalDebuff,
-  SceneId,
 } from '../../types';
 import { EventSystem } from '../../systems/event/EventSystem';
 import { SceneSystem } from '../../systems/scene/SceneSystem';
-import { CharacterSystem } from '../../systems/character/CharacterSystem';
 import { ItemSystem } from '../../systems/item/ItemSystem';
 
 // ============================================

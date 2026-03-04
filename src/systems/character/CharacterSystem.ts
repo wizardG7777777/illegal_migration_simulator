@@ -128,17 +128,18 @@ export const CharacterSystem = {
     delta: number
   ): GameState {
     const newState = deepClone(state);
-    const resourceData = newState.character.resources[resource];
 
     if (resource === 'actionPoints') {
       // 行动点有 min 和 max 限制
-      resourceData.current = clamp(
-        resourceData.current + delta,
-        resourceData.min,
-        resourceData.max
+      const apResource = newState.character.resources.actionPoints;
+      apResource.current = clamp(
+        apResource.current + delta,
+        apResource.min,
+        apResource.max
       );
     } else {
       // 健康和心理健康度只有 0-max 限制
+      const resourceData = newState.character.resources[resource];
       resourceData.current = clamp(
         resourceData.current + delta,
         RESOURCE_MIN,

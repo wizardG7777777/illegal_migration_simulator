@@ -275,19 +275,15 @@ describe('GameState Type Integrity', () => {
           survival: 5
         },
         resources: {
-          health: 100,
-          mental: 100,
-          money: { amount: 1000, currency: 'CNY' },
-          actionPoints: { current: 3, max: 3 },
-          foodSupply: 5
+          health: { current: 100, max: 100 },
+          mental: { current: 100, max: 100 },
+          money: { cny: 1000, usd: 0 },
+          actionPoints: { current: 3, max: 5, min: 0 }
         },
         status: {
-          isDead: false,
-          isCrazy: false,
-          isBroke: false,
-          isArrested: false,
-          buffs: [],
-          debuffs: []
+          terminalState: null,
+          terminalCountdown: 0,
+          flags: {}
         }
       },
       scene: {

@@ -73,7 +73,7 @@ export function ExampleWithSystemLayer() {
  */
 export function ExampleWithActions() {
   // 订阅状态
-  const { state, executeEvent, endTurn, useConsumable, saveGame } = useGameStore();
+  const { state, endTurn, useConsumable, saveGame } = useGameStore();
   
   // 使用 useCallback 缓存回调
   const handleEndTurn = useCallback(() => {

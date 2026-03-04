@@ -3,7 +3,7 @@
  * 展示如何组合使用原子组件和模块组件
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 
 // 原子组件
 import {
@@ -34,10 +34,8 @@ import type {
   CharacterData, 
   GameEvent, 
   SceneState, 
-  EnvironmentalDebuff,
   ConsumableItem,
-  PermanentItem,
-  TerminalState 
+  PermanentItem
 } from '@/types';
 
 // ============================================
@@ -210,9 +208,6 @@ const examplePermanents: Array<{ item: PermanentItem; slot: number }> = [
 // ============================================
 
 export function ExampleGameUI(): React.ReactElement {
-  const [terminalState, setTerminalState] = useState<TerminalState | null>(null);
-  const [countdown, setCountdown] = useState(3);
-
   const handleExecuteEvent = (choiceId: string, slots?: Record<string, string>) => {
     console.log('执行事件:', choiceId, '槽位选择:', slots);
   };
@@ -231,23 +226,17 @@ export function ExampleGameUI(): React.ReactElement {
         {/* 状态条 */}
         <section>
           <h2 className="text-lg font-semibold text-slate-400 mb-3">1. 状态条 (StatusBar)</h2>
-          <StatusBar scene={exampleScene} turnCount={exampleScene.turnCount} />
+          <StatusBar />
         </section>
 
         {/* 终结态警告 */}
         <section>
           <h2 className="text-lg font-semibold text-slate-400 mb-3">2. 终结态警告 (TerminalAlert)</h2>
           <div className="space-y-3">
-            <div className="flex gap-2 mb-3">
-              <Button size="sm" onClick={() => setTerminalState('DYING')}>濒死</Button>
-              <Button size="sm" onClick={() => setTerminalState('BREAKDOWN')}>崩溃</Button>
-              <Button size="sm" onClick={() => setTerminalState('DESTITUTE')}>匮乏</Button>
-              <Button size="sm" variant="ghost" onClick={() => setTerminalState(null)}>清除</Button>
-            </div>
-            <TerminalAlert 
-              terminalState={terminalState} 
-              countdown={countdown}
-            />
+            <p className="text-sm text-slate-500">
+              TerminalAlert 自动从游戏状态读取终结态信息
+            </p>
+            <TerminalAlert />
           </div>
         </section>
 
@@ -280,7 +269,7 @@ export function ExampleGameUI(): React.ReactElement {
           <EventCard
             event={exampleEvent}
             inventoryItems={exampleInventoryItems}
-            characterAttributes={exampleCharacter.attributes}
+            characterAttributes={exampleCharacter.attributes as unknown as Record<string, number>}
             onExecute={handleExecuteEvent}
           />
         </section>

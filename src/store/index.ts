@@ -418,12 +418,55 @@ export const useGameStore = create<GameStore>()(
       if (import.meta.env.PROD) return;
       
       const { state } = get();
+      const currentScene = state.scene.currentScene;
+      
+      // 开发工具：允许自由切换任何场景，绕过游戏规则限制
+      if (currentScene === targetScene) {
+        console.log(`已在场景 ${targetScene}`);
+        return;
+      }
       
       try {
-        const newState = SceneSystem.transitionScene(state, targetScene, method);
+        console.log(`[Dev] 开始场景切换: ${currentScene} → ${targetScene}`);
+        
+        // 1. 深克隆当前状态
+        let newState = deepClone(state);
+        
+        // 2. 直接切换场景ID，重置sceneTurn
+        newState.scene.currentScene = targetScene;
+        newState.scene.sceneTurn = 0;
+        
+        // 3. 初始化新场景状态（复用SceneSystem的逻辑）
+        console.log('[Dev] 初始化场景状态...');
+        newState = SceneSystem.initializeSceneState(newState, targetScene, method);
+        
+        // 4. 如果是切换到场景2，清空常驻道具（模拟跨境）
+        if (targetScene === 'act2') {
+          console.log('[Dev] 清空常驻道具（场景2切换）');
+          newState.inventory.permanents = [];
+        }
+        
+        // 5. 给予新场景的基础物资
+        console.log('[Dev] 给予基础物资...');
+        newState = SceneSystem.giveStarterKitByTransitionType(
+          newState,
+          targetScene,
+          currentScene,
+          method
+        );
+        
+        // 6. 清除待处理的随机事件
+        newState.scene.pendingRandomEvent = undefined;
+        
         set({ state: newState });
+        console.log(`✓ 场景已切换到 ${targetScene}`);
       } catch (error) {
         console.error('场景切换失败:', error);
+        // 打印更详细的错误信息
+        if (error instanceof Error) {
+          console.error('错误详情:', error.message);
+          console.error('错误堆栈:', error.stack);
+        }
       }
     },
 

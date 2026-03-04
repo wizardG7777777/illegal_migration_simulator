@@ -9,7 +9,7 @@ import { EventSystem } from '@/systems/event/EventSystem';
 import { SceneSystem } from '@/systems/scene/SceneSystem';
 import { ItemSystem } from '@/systems/item/ItemSystem';
 import { deepClone } from '@/utils/pure';
-import type { GameState } from '@/types';
+
 
 // Mock Systems
 vi.mock('@/systems/character/CharacterSystem', () => ({

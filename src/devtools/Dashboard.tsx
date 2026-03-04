@@ -10,18 +10,19 @@
  */
 
 import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useDevData } from './hooks/useDevData';
 import { EventGraphPanel } from './components/EventGraphPanel';
 import { BalancePanel } from './components/BalancePanel';
 import { EventSandbox } from './components/EventSandbox';
 import { EventBrowser } from './components/EventBrowser';
+import { ItemBrowser } from './components/ItemBrowser';
 import { Button, Card } from '../components/primitives';
 
 /**
  * 标签页类型
  */
-type TabId = 'graph' | 'balance' | 'sandbox' | 'browser';
+type TabId = 'graph' | 'balance' | 'sandbox' | 'browser' | 'items';
 
 /**
  * 标签页配置
@@ -46,6 +47,11 @@ const tabs: { id: TabId; label: string; description: string }[] = [
     id: 'browser',
     label: '事件索引',
     description: '浏览和验证所有事件',
+  },
+  {
+    id: 'items',
+    label: '道具库',
+    description: '浏览所有道具并添加到游戏',
   },
 ];
 
@@ -88,8 +94,21 @@ export function DevDashboard() {
     return <Navigate to="/" replace />;
   }
 
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabId>('graph');
   const { events, items, loading, error, reload } = useDevData();
+
+  // 添加道具到游戏（开发工具功能）
+  const handleAddItem = (itemId: string, count?: number) => {
+    // 通过控制台命令添加道具
+    const event = new CustomEvent('dev:addItem', {
+      detail: { itemId, count: count || 1 }
+    });
+    window.dispatchEvent(event);
+    
+    // 显示提示
+    alert(`已添加道具: ${itemId} x${count || 1}`);
+  };
 
   // 加载中
   if (loading) {
@@ -120,6 +139,9 @@ export function DevDashboard() {
               <span>{items.length} 个道具</span>
               <Button size="sm" variant="ghost" onClick={reload}>
                 🔄 刷新数据
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => navigate('/game')}>
+                🎮 返回游戏
               </Button>
             </div>
           </div>
@@ -166,6 +188,7 @@ export function DevDashboard() {
           {activeTab === 'balance' && <BalancePanel events={events} />}
           {activeTab === 'sandbox' && <EventSandbox events={events} />}
           {activeTab === 'browser' && <EventBrowser events={events} items={items} />}
+          {activeTab === 'items' && <ItemBrowser items={items} onAddItem={handleAddItem} />}
         </div>
       </main>
 

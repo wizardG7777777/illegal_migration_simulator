@@ -33,6 +33,7 @@ export { EventGraphPanel } from './components/EventGraphPanel';
 export { BalancePanel } from './components/BalancePanel';
 export { EventSandbox } from './components/EventSandbox';
 export { EventBrowser } from './components/EventBrowser';
+export { ItemBrowser } from './components/ItemBrowser';
 
 // 默认导出
 export { DevDashboard as default } from './Dashboard';

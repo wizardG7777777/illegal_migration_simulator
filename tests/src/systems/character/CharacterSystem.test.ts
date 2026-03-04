@@ -9,7 +9,7 @@ import {
   calculateDyingCountdown, 
   calculateBreakdownCountdown 
 } from '../../../../src/systems/character/CharacterSystem';
-import { GameState, CharacterData, TerminalState } from '../../../../src/types';
+import { GameState } from '../../../../src/types';
 
 // ============================================
 // 测试辅助函数

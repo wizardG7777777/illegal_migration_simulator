@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SceneSystem } from '../../../../src/systems/scene/SceneSystem';
 import { ItemSystem } from '../../../../src/systems/item/ItemSystem';
-import { CharacterSystem } from '../../../../src/systems/character/CharacterSystem';
-import { dataLoader } from '../../../../src/systems/loader/DataLoader';
 import type { GameState, EnvironmentalDebuff, EconomicDebuffEffect } from '../../../../src/types';
 
 // Mock dependencies
@@ -56,12 +54,6 @@ const createBaseState = (): GameState => ({
       terminalState: null,
       terminalCountdown: 0,
       flags: {},
-      buffs: [],
-      debuffs: [],
-      isDead: false,
-      isCrazy: false,
-      isBroke: false,
-      isArrested: false
     },
   },
   scene: {
@@ -149,7 +141,7 @@ describe('SceneSystem', () => {
       state.scene.currentScene = 'act3';
       state.scene.act3 = {
         livingExpenses: {
-            baseline: { food: 400, lodging: 0, transport: 100, total: 500 },
+            baseline: { food: 400, lodging: 0, transport: 100 },
             current: { food: 400, lodging: 0, transport: 100, total: 500 }
         },
         debtDefaultCount: 0

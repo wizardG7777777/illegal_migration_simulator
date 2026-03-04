@@ -40,6 +40,7 @@ const createBaseState = (): GameState => ({
     status: {
       terminalState: null,
       terminalCountdown: 0,
+      flags: {},
     },
   },
   scene: {

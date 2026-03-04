@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import type { GameEvent, EventChoice, ItemSlot } from '../../types';
+import type { GameEvent, EventChoice, ItemSlot, GameState } from '../../types';
 import { useGameStore } from '../../store';
 import { EventSystem } from '../../systems/event/EventSystem';
 import { Card } from '../primitives/Card';
@@ -44,7 +44,7 @@ const EventCard = React.memo(function EventCard({
   ) => void;
   isExpanded: boolean;
   onToggle: () => void;
-  state: ReturnType<typeof useGameStore>['state'];
+  state: GameState;
 }) {
   const [selectedChoiceId, setSelectedChoiceId] = useState<string | null>(null);
   const [slotSelections, setSlotSelections] = useState<Record<string, string>>({});
@@ -258,9 +258,14 @@ export const EventPanel = React.memo(function EventPanel({
         <h2 className="text-lg font-semibold text-slate-200">可用行动</h2>
         <div className="flex items-center gap-2 text-sm">
           <span className="text-slate-400">行动点:</span>
-          <span className={`font-mono font-bold ${actionPoints > 0 ? 'text-blue-400' : 'text-red-400'}`}>
-            {actionPoints}
-          </span>
+          <div className="flex items-center gap-1">
+            {Array.from({ length: actionPoints }, (_, i) => (
+              <span key={i} className="text-sm">⚡️</span>
+            ))}
+            {actionPoints === 0 && (
+              <span className="text-xs text-slate-500">无</span>
+            )}
+          </div>
         </div>
       </div>
 

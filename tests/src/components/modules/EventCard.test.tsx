@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { describe, it, expect, vi } from 'vitest';
 import { EventCard } from '@/components/modules/EventCard';
@@ -38,21 +38,21 @@ const mockEvent: GameEvent = {
     {
       id: 'choice1',
       name: 'Option 1',
-      description: 'First option',
+      effects: {},
     },
     {
       id: 'choice2',
       name: 'Option 2 (Attribute Check)',
-      description: 'Second option',
+      effects: {},
       condition: {
         type: 'ATTRIBUTE',
-        attribute: 'strength',
+        attribute: 'physique',
         operator: '>=',
         value: 10,
       },
     },
   ],
-  scenes: ['scene1'],
+  scenes: ['act1'],
 };
 
 const mockInventoryItems = [
@@ -61,8 +61,12 @@ const mockInventoryItems = [
 ];
 
 const mockAttributes = {
-  strength: 12,
+  physique: 12,
   intelligence: 8,
+  english: 5,
+  social: 8,
+  riskAwareness: 8,
+  survival: 6,
 };
 
 describe('EventCard Component', () => {
@@ -143,7 +147,7 @@ describe('EventCard Component', () => {
 
     const option2Button = screen.getByText('Option 2 (Attribute Check)').closest('button');
     expect(option2Button).toBeDisabled();
-    expect(screen.getByText('需要 strength >= 10')).toBeInTheDocument();
+    expect(screen.getByText('需要 physique >= 10')).toBeInTheDocument();
   });
 
   it('handles execution with slot selections', () => {
