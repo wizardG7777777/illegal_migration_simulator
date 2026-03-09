@@ -1,0 +1,11 @@
+{
+  "id": "npc_zhang_lawyer",
+  "name": "张律师",
+  "avatar": "👨‍💼",
+  "greetingMessage": "您好，我是张律师。关于您的身份问题，我们可以聊聊。",
+  "tags": ["lawyer", "asylum", "visa", "legal", "court", "immigration"],
+  "unlockCondition": {
+    "scene": "act3",
+    "minSceneTurn": 1
+  }
+}

@@ -1,7 +1,7 @@
 /**
  * DataLoader.ts
  * 
- * 数据加载系统 - 负责加载和管理游戏数据（事件和道具）
+ * 数据加载系统 - 负责加载和管理游戏数据（事件、道具和NPC）
  * 
  * 使用单例模式确保整个应用只有一个 DataLoader 实例
  * 应用启动时调用 loadAll() 加载所有 JSON 数据
@@ -21,6 +21,11 @@ import type {
   ItemCategory,
   ItemTag,
 } from '../../types/item';
+
+import type {
+  NPCConfig,
+  NPCsDataFile,
+} from '../../types/npc';
 
 /** 事件数据文件结构 */
 interface EventsDataFile {
@@ -60,6 +65,7 @@ export class DataLoader {
   private events: Map<string, GameEvent> = new Map();
   private items: Map<string, Item> = new Map();
   private books: Map<string, BookItem> = new Map();
+  private npcs: Map<string, NPCConfig> = new Map();
   
   // 加载状态
   private loaded = false;
@@ -78,6 +84,8 @@ export class DataLoader {
     '/data/items/permanents.json',
     '/data/items/books.json',
   ];
+
+  private readonly npcIndexFile = '/data/npcs/_index.json';
 
   /**
    * 私有构造函数 - 防止外部直接实例化
@@ -145,12 +153,14 @@ export class DataLoader {
       await Promise.all([
         this.loadAllEvents(),
         this.loadAllItems(),
+        this.loadAllNPCs(),
       ]);
 
       this.loaded = true;
       console.log(
         `[DataLoader] 数据加载完成: ${this.events.size} 个事件, ` +
-        `${this.items.size} 个道具（含 ${this.books.size} 本书籍）`
+        `${this.items.size} 个道具（含 ${this.books.size} 本书籍）, ` +
+        `${this.npcs.size} 个NPC`
       );
     } catch (error) {
       console.error('[DataLoader] 数据加载失败:', error);
@@ -268,6 +278,82 @@ export class DataLoader {
       console.log(`[DataLoader] 已加载 ${data.items.length} 个道具: ${filePath}`);
     } catch (error) {
       console.error(`[DataLoader] 加载道具文件失败: ${filePath}`, error);
+      throw error;
+    }
+  }
+
+  // ============================================================
+  // NPC数据加载方法
+  // ============================================================
+
+  /**
+   * 加载所有NPC文件
+   * @private
+   */
+  private async loadAllNPCs(): Promise<void> {
+    try {
+      // 1. 先加载索引文件
+      const response = await fetch(this.npcIndexFile);
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.warn(`[DataLoader] NPC索引文件不存在: ${this.npcIndexFile}`);
+          return;
+        }
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const indexData: NPCsDataFile = await response.json();
+      
+      if (!indexData.npcs || !Array.isArray(indexData.npcs)) {
+        console.warn(`[DataLoader] NPC索引文件格式错误（缺少 npcs 数组）`);
+        return;
+      }
+
+      // 2. 并行加载所有NPC配置文件
+      const loadPromises = indexData.npcs.map((npcId: string) =>
+        this.loadNPCConfigFile(npcId)
+      );
+      await Promise.all(loadPromises);
+
+      console.log(`[DataLoader] 已加载 ${this.npcs.size} 个NPC`);
+    } catch (error) {
+      console.error('[DataLoader] 加载NPC数据失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 加载单个NPC配置文件
+   * @private
+   * @param npcId NPC ID
+   */
+  private async loadNPCConfigFile(npcId: string): Promise<void> {
+    const filePath = `/data/npcs/${npcId}.json`;
+    
+    try {
+      const response = await fetch(filePath);
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.warn(`[DataLoader] NPC配置文件不存在: ${filePath}`);
+          return;
+        }
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const npcConfig: NPCConfig = await response.json();
+
+      if (this.npcs.has(npcConfig.id)) {
+        console.warn(
+          `[DataLoader] NPC ID 重复: ${npcConfig.id}，将被覆盖`
+        );
+      }
+      
+      this.npcs.set(npcConfig.id, npcConfig);
+      console.log(`[DataLoader] 已加载NPC: ${npcConfig.name} (${npcConfig.id})`);
+    } catch (error) {
+      console.error(`[DataLoader] 加载NPC配置文件失败: ${filePath}`, error);
       throw error;
     }
   }
@@ -524,6 +610,47 @@ export class DataLoader {
   }
 
   // ============================================================
+  // NPC数据访问方法
+  // ============================================================
+
+  /**
+   * 获取单个NPC
+   * @param id NPC ID
+   * @returns NPC对象，如果不存在则返回 undefined
+   *
+   * @example
+   * ```typescript
+   * const npc = loader.getNPC('guide_wang');
+   * if (npc) {
+   *   console.log(npc.name); // "王向导"
+   * }
+   * ```
+   */
+  public getNPC(id: string): NPCConfig | undefined {
+    this.ensureLoaded();
+    return this.npcs.get(id);
+  }
+
+  /**
+   * 获取所有NPC
+   * @returns 所有NPC的数组
+   */
+  public getAllNPCs(): NPCConfig[] {
+    this.ensureLoaded();
+    return Array.from(this.npcs.values());
+  }
+
+  /**
+   * 按标签获取NPC
+   * @param tag NPC标签
+   * @returns 包含该标签的NPC数组
+   */
+  public getNPCsByTag(tag: string): NPCConfig[] {
+    this.ensureLoaded();
+    return this.getAllNPCs().filter(npc => npc.tags.includes(tag));
+  }
+
+  // ============================================================
   // 工具方法
   // ============================================================
 
@@ -567,6 +694,7 @@ export class DataLoader {
     this.events.clear();
     this.items.clear();
     this.books.clear();
+    this.npcs.clear();
     this.loaded = false;
     console.log('[DataLoader] 缓存已清空');
   }

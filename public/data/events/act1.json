@@ -163,6 +163,51 @@
         }
       ],
       "tags": ["study", "skill"]
+    },
+    {
+      "id": "act1_john_chat",
+      "category": "FIXED",
+      "name": "联系卡车司机约翰",
+      "description": "你给约翰发了条消息，询问关于去美国的事。他很快回复：『兄弟，想走线啊？这事电话里说不清，但我可以给你些建议。』",
+      "scenes": ["act1"],
+      "execution": {
+        "repeatable": true,
+        "maxExecutions": 3,
+        "actionPointCost": 1
+      },
+      "tags": ["driver", "john", "social"],
+      "choices": [
+        {
+          "id": "ask_route",
+          "name": "询问路线安全吗？",
+          "effects": {
+            "resources": {
+              "mental": 2
+            },
+            "narrative": "约翰回复：『墨西哥那边现在查得紧，但走沙漠还是有机会的。关键是找对向导，别省那点钱。』"
+          }
+        },
+        {
+          "id": "ask_cost",
+          "name": "问需要准备多少钱",
+          "effects": {
+            "resources": {
+              "mental": -1
+            },
+            "narrative": "约翰回复：『路费加打点，最少准备五千刀。到了美国还得活着，再准备个五千应急。』你倒吸一口凉气。"
+          }
+        },
+        {
+          "id": "ask_work",
+          "name": "问美国能找到什么工作",
+          "effects": {
+            "resources": {
+              "mental": 1
+            },
+            "narrative": "约翰回复：『没身份只能打黑工，餐馆洗碗、工地搬砖、送外卖。累是累，但饿不死。』"
+          }
+        }
+      ]
     }
   ]
 }

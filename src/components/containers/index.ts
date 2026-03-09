@@ -18,3 +18,11 @@ export type { SceneTransitionProps } from './SceneTransition';
 
 export { BackpackModal } from './BackpackModal';
 export type { BackpackModalProps } from './BackpackModal';
+
+export { ChatView } from './ChatView';
+export type { ChatViewProps } from './ChatView';
+
+export { SplashNewsScreen } from './SplashNewsScreen';
+export type { SplashNewsScreenProps } from './SplashNewsScreen';
+
+export { GameStatusBar } from './GameStatusBar';

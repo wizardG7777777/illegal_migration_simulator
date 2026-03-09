@@ -104,4 +104,15 @@ export type {
   PlayerAction,
 } from './game';
 
+// ============================================
+// NPC系统相关类型
+// ============================================
+export type {
+  NPCConfig,
+  NPCState,
+  ChatMessage,
+  NPCSystemState,
+  NPCsDataFile,
+} from './npc';
+
 

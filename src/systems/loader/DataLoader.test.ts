@@ -320,6 +320,10 @@ describe('GameState Type Integrity', () => {
           completionCount: 0,
           unlockedEndings: []
         }
+      },
+      npcSystem: {
+        npcs: {},
+        chatHistory: []
       }
     };
 

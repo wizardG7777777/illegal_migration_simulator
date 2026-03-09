@@ -63,6 +63,10 @@ function createTestGameState(): GameState {
         unlockedEndings: [],
       },
     },
+    npcSystem: {
+      npcs: {},
+      chatHistory: [],
+    },
   };
 }
 

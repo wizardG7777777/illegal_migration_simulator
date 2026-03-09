@@ -1,0 +1,7 @@
+{
+  "version": "1.0.0",
+  "npcs": [
+    "npc_john_driver",
+    "npc_zhang_lawyer"
+  ]
+}

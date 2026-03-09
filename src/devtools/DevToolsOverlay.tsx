@@ -12,6 +12,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '../store';
 import type { SceneId } from '../types/game';
+import { dataLoader } from '../systems/loader/DataLoader';
 
 /**
  * 快捷按钮组件
@@ -101,6 +102,86 @@ export function DevToolsOverlay() {
 
   const openDashboard = () => {
     navigate('/__devtools/dashboard');
+  };
+
+  // NPC快捷操作组件
+  const NPCSection = () => {
+    const npcs = dataLoader.getAllNPCs();
+    const unlockedNPCs = npcs.filter(npc => state.npcSystem.npcs[npc.id]?.unlocked);
+    
+    const unlockNPC = (npcId: string) => {
+      store.unlockNPC(npcId);
+      const npc = dataLoader.getNPC(npcId);
+      alert(`已解锁NPC: ${npc?.name || npcId}`);
+    };
+    
+    const unlockAllNPCs = () => {
+      npcs.forEach(npc => {
+        if (!state.npcSystem.npcs[npc.id]?.unlocked) {
+          store.unlockNPC(npc.id);
+        }
+      });
+      alert(`已解锁全部 ${npcs.length} 个NPC`);
+    };
+    
+    const lockAllNPCs = () => {
+      store.clearChatHistory();
+      const newState = { ...state };
+      Object.keys(newState.npcSystem.npcs).forEach(npcId => {
+        if (newState.npcSystem.npcs[npcId]) {
+          newState.npcSystem.npcs[npcId].unlocked = false;
+        }
+      });
+      // 使用loadGame加载新状态
+      store.loadGame({
+        version: newState.meta.version,
+        savedAt: Date.now(),
+        state: newState,
+      });
+      alert('已锁定所有NPC并清空聊天记录');
+    };
+
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-xs text-slate-500">NPC ({unlockedNPCs.length}/{npcs.length})</span>
+          <div className="flex gap-1">
+            <button
+              onClick={unlockAllNPCs}
+              className="text-xs px-2 py-0.5 bg-green-600/80 hover:bg-green-500 text-white rounded transition-colors"
+            >
+              全部解锁
+            </button>
+            <button
+              onClick={lockAllNPCs}
+              className="text-xs px-2 py-0.5 bg-red-600/80 hover:bg-red-500 text-white rounded transition-colors"
+            >
+              全部锁定
+            </button>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-1">
+          {npcs.map(npc => {
+            const isUnlocked = state.npcSystem.npcs[npc.id]?.unlocked;
+            return (
+              <button
+                key={npc.id}
+                onClick={() => !isUnlocked && unlockNPC(npc.id)}
+                className={`
+                  px-2 py-1 text-xs rounded font-medium transition-colors
+                  ${isUnlocked 
+                    ? 'bg-green-600/50 text-green-200 cursor-default' 
+                    : 'bg-slate-700 hover:bg-slate-600 text-slate-200'}
+                `}
+                title={isUnlocked ? `${npc.name} (已解锁)` : `点击解锁${npc.name}`}
+              >
+                {npc.avatar} {isUnlocked ? '✓' : '○'}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
   };
 
   // 如果不显示，只显示悬浮按钮
@@ -247,6 +328,10 @@ export function DevToolsOverlay() {
                 <QuickButton label="场景3" onClick={() => switchScene('act3')} />
               </div>
             </div>
+
+            {/* NPC操作 */}
+            <NPCSection />
+
           </div>
         )}
 

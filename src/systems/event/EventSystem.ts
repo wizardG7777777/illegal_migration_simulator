@@ -25,17 +25,9 @@ import type {
 import { deepClone, weightedRandom, clamp } from '../../utils/pure';
 import { dataLoader } from '../loader/DataLoader';
 import { checkCondition, checkAllConditions } from './conditions';
-
-// 动态导入 ItemSystem 以避免循环依赖
-// ItemSystem 会调用 EventSystem，EventSystem 也会调用 ItemSystem
-let ItemSystem: typeof import('../item/ItemSystem').ItemSystem | null = null;
-
-function getItemSystem(): typeof import('../item/ItemSystem').ItemSystem {
-  if (!ItemSystem) {
-    ItemSystem = require('../item/ItemSystem').ItemSystem;
-  }
-  return ItemSystem!;
-}
+import { ItemSystem } from '../item/ItemSystem';
+import { NPCSystem } from '../npc/NPCSystem';
+import { SceneSystem } from '../scene/SceneSystem';
 
 /**
  * 事件系统
@@ -278,10 +270,10 @@ export const EventSystem = {
 
     // 检查强制槽位
     if (event.slots) {
-      const ItemSys = getItemSystem();
+      /* use ItemSystem directly */
       for (const slot of event.slots) {
         if (slot.required) {
-          const bestMatch = ItemSys.findBestMatch(state, slot);
+          const bestMatch = ItemSystem.findBestMatch(state, slot);
           if (!bestMatch) {
             return false;
           }
@@ -427,33 +419,33 @@ export const EventSystem = {
 
     // 3. 获得道具
     if (effects.addItems && effects.addItems.length > 0) {
-      const ItemSys = getItemSystem();
+      /* use ItemSystem directly */
       for (const itemData of effects.addItems) {
-        newState = ItemSys.addItem(newState, itemData.itemId, itemData.count);
+        newState = ItemSystem.addItem(newState, itemData.itemId, itemData.count);
       }
     }
 
     // 4. 失去道具
     if (effects.removeItems && effects.removeItems.length > 0) {
-      const ItemSys = getItemSystem();
+      /* use ItemSystem directly */
       for (const itemData of effects.removeItems) {
-        newState = ItemSys.removeItem(newState, itemData.itemId, itemData.count);
+        newState = ItemSystem.removeItem(newState, itemData.itemId, itemData.count);
       }
     }
 
     // 5. 获得常驻道具
     if (effects.addPermanents && effects.addPermanents.length > 0) {
-      const ItemSys = getItemSystem();
+      /* use ItemSystem directly */
       for (const itemId of effects.addPermanents) {
-        newState = ItemSys.addPermanentItem(newState, itemId);
+        newState = ItemSystem.addPermanentItem(newState, itemId);
       }
     }
 
     // 6. 失去常驻道具
     if (effects.removePermanents && effects.removePermanents.length > 0) {
-      const ItemSys = getItemSystem();
+      /* use ItemSystem directly */
       for (const itemId of effects.removePermanents) {
-        newState = ItemSys.removePermanentItem(newState, itemId);
+        newState = ItemSystem.removePermanentItem(newState, itemId);
       }
     }
 
@@ -491,6 +483,36 @@ export const EventSystem = {
       if (effects.special.triggerChain) {
         newState = this.scheduleChainEvent(newState, effects.special.triggerChain);
       }
+    }
+
+    // 10. 解锁NPC
+    if (effects.unlockNPC) {
+      const npcId = effects.unlockNPC;
+      // 检查NPC是否已解锁
+      if (!newState.npcSystem.npcs[npcId]?.unlocked) {
+        try {
+          newState = NPCSystem.unlockNPC(newState, npcId);
+        } catch (error) {
+          console.warn(`[EventSystem] 解锁NPC失败: ${npcId}`, error);
+        }
+      }
+    }
+
+    // 11. 添加Debuff
+    if (effects.addDebuff) {
+      const debuff = {
+        ...effects.addDebuff,
+        startTurn: newState.scene.turnCount,
+      };
+      newState = SceneSystem.addDebuff(newState, debuff);
+    }
+
+    // 12. 移除Debuff
+    if (effects.removeDebuff) {
+      const debuffId = effects.removeDebuff;
+      newState.scene.activeDebuffs = newState.scene.activeDebuffs.filter(
+        d => d.id !== debuffId
+      );
     }
 
     return newState;

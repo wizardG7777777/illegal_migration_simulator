@@ -4,7 +4,7 @@
  */
 
 import type { ItemTag } from './item';
-import type { SceneId } from './scene';
+import type { SceneId, EnvironmentalDebuff } from './scene';
 
 /**
  * 事件标签 - 用于分类和筛选事件
@@ -204,12 +204,20 @@ export interface EventEffect {
   addPermanents?: string[];
   /** 失去常驻道具（可选） */
   removePermanents?: string[];
+  /** 解锁NPC（NPC ID） */
+  unlockNPC?: string;
+  /** 添加Debuff（startTurn由系统执行时自动设置） */
+  addDebuff?: Omit<EnvironmentalDebuff, 'startTurn'>;
+  /** 移除Debuff（通过Debuff ID） */
+  removeDebuff?: string;
   /** 设置状态标记（可选） */
   setFlags?: Record<string, boolean | number | string>;
   /** 移除状态标记（可选） */
   removeFlags?: string[];
   /** 叙事文案 */
   narrative?: string;
+  /** 是否以主角回复结束对话（不触发NPC回复） */
+  endWithPlayer?: boolean;
   /** 特殊结果 */
   special?: {
     /** 是否游戏结束 */
@@ -288,6 +296,16 @@ export interface DebuffConfig {
 }
 
 /**
+ * 聊天触发配置
+ */
+export interface ChatTriggerConfig {
+  /** 关联的NPC ID */
+  npcId: string;
+  /** 是否长期显示在聊天列表中（可选，默认false） */
+  isPersistent?: boolean;
+}
+
+/**
  * 游戏事件基础接口
  */
 export interface GameEvent {
@@ -317,6 +335,8 @@ export interface GameEvent {
   content?: PolicyPressureContent;
   /** Debuff配置（POLICY_PRESSURE类型特有） */
   debuff?: DebuffConfig;
+  /** 聊天触发配置（可选，用于关联NPC） */
+  chatTrigger?: ChatTriggerConfig;
 }
 
 /**

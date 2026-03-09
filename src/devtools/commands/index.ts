@@ -13,3 +13,5 @@ export { flagCommand } from './flag';
 export { saveCommand, loadCommand } from './save';
 export { statusCommand } from './status';
 export { helpCommand, clearCommand } from './utils';
+export { npcCommand } from './npc';
+export { chatCommand } from './chat';

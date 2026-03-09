@@ -17,12 +17,14 @@ import { BalancePanel } from './components/BalancePanel';
 import { EventSandbox } from './components/EventSandbox';
 import { EventBrowser } from './components/EventBrowser';
 import { ItemBrowser } from './components/ItemBrowser';
+import { NPCManagerPanel } from './components/NPCManagerPanel';
 import { Button, Card } from '../components/primitives';
+import { dataLoader } from '../systems/loader/DataLoader';
 
 /**
  * 标签页类型
  */
-type TabId = 'graph' | 'balance' | 'sandbox' | 'browser' | 'items';
+type TabId = 'graph' | 'balance' | 'sandbox' | 'browser' | 'items' | 'npc';
 
 /**
  * 标签页配置
@@ -52,6 +54,11 @@ const tabs: { id: TabId; label: string; description: string }[] = [
     id: 'items',
     label: '道具库',
     description: '浏览所有道具并添加到游戏',
+  },
+  {
+    id: 'npc',
+    label: 'NPC管理',
+    description: '管理NPC解锁状态和聊天记录',
   },
 ];
 
@@ -137,6 +144,13 @@ export function DevDashboard() {
             <div className="flex items-center gap-4 text-sm text-slate-400">
               <span>{events.length} 个事件</span>
               <span>{items.length} 个道具</span>
+              <span>{(() => {
+                try {
+                  return dataLoader.getAllNPCs().length;
+                } catch {
+                  return 0;
+                }
+              })()} 个NPC</span>
               <Button size="sm" variant="ghost" onClick={reload}>
                 🔄 刷新数据
               </Button>
@@ -189,6 +203,7 @@ export function DevDashboard() {
           {activeTab === 'sandbox' && <EventSandbox events={events} />}
           {activeTab === 'browser' && <EventBrowser events={events} items={items} />}
           {activeTab === 'items' && <ItemBrowser items={items} onAddItem={handleAddItem} />}
+          {activeTab === 'npc' && <NPCManagerPanel />}
         </div>
       </main>
 

@@ -86,6 +86,10 @@ const createBaseState = (): GameState => ({
       unlockedEndings: [],
     },
   },
+  npcSystem: {
+    npcs: {},
+    chatHistory: [],
+  },
 });
 
 describe('EventSystem', () => {

@@ -15,11 +15,12 @@
 
 /// <reference types="vite/client" />
 import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
+import { devtools, persist } from 'zustand/middleware';
 import type {
   GameState,
   SceneId,
   SaveData,
+  ChatMessage,
 } from '../types';
 import { deepClone } from '../utils/pure';
 import { generateSaveId } from '../utils/id';
@@ -27,6 +28,7 @@ import { CharacterSystem } from '../systems/character/CharacterSystem';
 import { EventSystem } from '../systems/event/EventSystem';
 import { SceneSystem } from '../systems/scene/SceneSystem';
 import { ItemSystem } from '../systems/item/ItemSystem';
+import { dataLoader } from '../systems/loader/DataLoader';
 
 // ============================================
 // 初始状态创建
@@ -82,6 +84,10 @@ function createInitialState(): GameState {
         completionCount: 0,
         unlockedEndings: [],
       },
+    },
+    npcSystem: {
+      npcs: {},
+      chatHistory: [],
     },
   };
 }
@@ -243,6 +249,26 @@ export interface GameStore {
    * @param saveId - 存档ID
    */
   deleteSave: (saveId: string) => void;
+
+  // ========== NPC系统 Actions ==========
+
+  /**
+   * 解锁NPC
+   * @param npcId - NPC ID
+   */
+  unlockNPC: (npcId: string) => void;
+
+  /**
+   * 添加聊天消息
+   * @param message - 消息内容（不含id和timestamp）
+   */
+  addChatMessage: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
+
+  /**
+   * 清空聊天记录
+   * @param npcId - NPC ID（可选，不传则清空全部）
+   */
+  clearChatHistory: (npcId?: string) => void;
 }
 
 // ============================================
@@ -255,9 +281,10 @@ export interface GameStore {
 // 创建 Zustand store（React 标准方式）
 export const useGameStore = create<GameStore>()(
   devtools(
-    (set, get) => ({
-    // 初始状态
-    state: createInitialState(),
+    persist(
+      (set, get) => ({
+        // 初始状态
+        state: createInitialState(),
 
     // ========== 游戏流程 Actions ==========
 
@@ -613,12 +640,79 @@ export const useGameStore = create<GameStore>()(
         console.error('删除存档失败:', error);
       }
     },
+
+    // ========== NPC系统 Actions ==========
+
+    unlockNPC: (npcId: string) => {
+      const { state } = get();
+      const newState = deepClone(state);
+
+      if (!newState.npcSystem.npcs[npcId]) {
+        newState.npcSystem.npcs[npcId] = {
+          unlocked: true,
+          lastInteractionTurn: newState.scene.turnCount,
+        };
+
+        // 添加系统消息到聊天记录
+        const npcConfig = dataLoader.getNPC(npcId);
+        if (npcConfig) {
+          newState.npcSystem.chatHistory.push({
+            id: `msg_${Date.now()}_system`,
+            npcId,
+            sender: 'npc',
+            content: `你已添加 ${npcConfig.name} 为联系人`,
+            timestamp: Date.now(),
+          });
+        }
+
+        set({ state: newState });
+      }
+    },
+
+    addChatMessage: (message) => {
+      const { state } = get();
+      const newState = deepClone(state);
+
+      newState.npcSystem.chatHistory.push({
+        id: `msg_${Date.now()}`,
+        timestamp: Date.now(),
+        ...message,
+      });
+
+      // 更新最后互动回合
+      if (newState.npcSystem.npcs[message.npcId]) {
+        newState.npcSystem.npcs[message.npcId].lastInteractionTurn = newState.scene.turnCount;
+      }
+
+      set({ state: newState });
+    },
+
+    clearChatHistory: (npcId?: string) => {
+      const { state } = get();
+      const newState = deepClone(state);
+
+      if (npcId) {
+        newState.npcSystem.chatHistory = newState.npcSystem.chatHistory.filter(
+          msg => msg.npcId !== npcId
+        );
+      } else {
+        newState.npcSystem.chatHistory = [];
+      }
+
+      set({ state: newState });
+    },
   }),
   {
-    name: 'GameStore',
-    enabled: import.meta.env.DEV,
+    name: 'game-storage', // localStorage的key
+    partialize: (state) => ({ state: state.state }), // 只持久化state字段
   }
-));
+),
+{
+  name: 'GameStore',
+  enabled: import.meta.env.DEV,
+}
+)
+);
 
 // 导出 store 实例供测试和非 React 代码使用
 export const gameStore = useGameStore;

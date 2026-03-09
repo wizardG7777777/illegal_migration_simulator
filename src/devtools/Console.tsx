@@ -35,6 +35,8 @@ import {
   statusCommand,
   helpCommand,
   clearCommand,
+  npcCommand,
+  chatCommand,
 } from './commands';
 import type { ConsoleOutput } from './hooks/useConsole';
 
@@ -52,6 +54,8 @@ function registerAllCommands() {
   commandRegistry.register(statusCommand);
   commandRegistry.register(helpCommand);
   commandRegistry.register(clearCommand);
+  commandRegistry.register(npcCommand);
+  commandRegistry.register(chatCommand);
 
   // 注册别名
   commandRegistry.registerAlias('s', 'set');
@@ -65,6 +69,8 @@ function registerAllCommands() {
   commandRegistry.registerAlias('h', 'help');
   commandRegistry.registerAlias('cls', 'clear');
   commandRegistry.registerAlias('c', 'clear');
+  commandRegistry.registerAlias('n', 'npc');
+  commandRegistry.registerAlias('ch', 'chat');
 }
 
 // 只在模块加载时注册一次

@@ -87,6 +87,41 @@
         }
       ],
       "tags": ["survival", "food"]
+    },
+    {
+      "id": "act2_john_meet",
+      "category": "FIXED",
+      "name": "与约翰在边境见面",
+      "description": "你在墨西哥边境的一个小餐馆里遇到了约翰。他正吃着塔可饼，看到你后挥了挥手：『来得正好，我明天就要往北走。要搭顺风车吗？』",
+      "scenes": ["act2"],
+      "execution": {
+        "repeatable": true,
+        "maxExecutions": 2,
+        "actionPointCost": 1
+      },
+      "tags": ["driver", "john", "transport"],
+      "choices": [
+        {
+          "id": "ask_border",
+          "name": "问边境检查严不严",
+          "effects": {
+            "resources": {
+              "mental": 2
+            },
+            "narrative": "约翰压低声音：『最近川普搞得紧，但老司机有门道。你躲在后厢别出声，剩下的交给我。』"
+          }
+        },
+        {
+          "id": "ask_price",
+          "name": "问搭车要多少钱",
+          "effects": {
+            "resources": {
+              "mental": -1
+            },
+            "narrative": "约翰竖起三根手指：『三百刀，包你到洛杉矶。要是被拦了，钱不退，但我保证不会出卖你。』"
+          }
+        }
+      ]
     }
   ]
 }

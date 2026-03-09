@@ -1,19 +1,21 @@
 /**
- * EventPanel 容器组件
- * 显示可用固定事件列表，支持展开查看详情和执行
+ * EventPanel 容器组件（重构后）
+ * 使用 Presenter 架构，支持多种表现模式
  */
 
-import React, { useState, useCallback } from 'react';
-import type { GameEvent, EventChoice, ItemSlot, GameState } from '../../types';
-import { useGameStore } from '../../store';
-import { EventSystem } from '../../systems/event/EventSystem';
-import { Card } from '../primitives/Card';
-import { Button } from '../primitives/Button';
-import { ItemSystem } from '../../systems/item/ItemSystem';
+import React, { useState, useCallback, useMemo } from 'react';
+import { useGameStore } from '@/store';
+import { EventPresenterFactory, type PresenterMode } from '@/presenters';
+import type { EventViewModel } from '@/presenters/types';
+import { Card } from '@/components/primitives/Card';
+import { Button } from '@/components/primitives/Button';
+import { EventSystem } from '@/systems/event/EventSystem';
+import { ItemSystem } from '@/systems/item/ItemSystem';
+import type { GameState, ItemSlot } from '@/types';
 
 export interface EventPanelProps {
-  /** 可用事件列表 */
-  availableEvents: GameEvent[];
+  /** 表现模式 */
+  mode?: PresenterMode;
   /** 执行事件回调 */
   onExecuteEvent: (
     eventId: string,
@@ -25,23 +27,17 @@ export interface EventPanelProps {
 }
 
 /**
- * 事件卡片组件
+ * 事件卡片组件（使用 ViewModel）
  */
 const EventCard = React.memo(function EventCard({
-  event,
-  actionPoints,
+  viewModel,
   onExecute,
   isExpanded,
   onToggle,
   state,
 }: {
-  event: GameEvent;
-  actionPoints: number;
-  onExecute: (
-    eventId: string,
-    choiceId: string,
-    slotSelections?: Record<string, string>
-  ) => void;
+  viewModel: EventViewModel;
+  onExecute: (eventId: string, choiceId: string, slotSelections?: Record<string, string>) => void;
   isExpanded: boolean;
   onToggle: () => void;
   state: GameState;
@@ -50,27 +46,17 @@ const EventCard = React.memo(function EventCard({
   const [slotSelections, setSlotSelections] = useState<Record<string, string>>({});
 
   // 获取事件的可用选项
-  const choices = EventSystem.getAvailableChoices(state, event.id);
+  const choices = useMemo(() => {
+    return EventSystem.getAvailableChoices(state, viewModel.meta._rawEventId);
+  }, [state, viewModel.meta._rawEventId]);
   
-  // 计算事件消耗
-  const apCost = event.execution?.actionPointCost ?? 0;
-  const moneyCost = event.execution?.moneyCost ?? 0;
-  const moneyCurrency = event.execution?.moneyCurrency ?? 'CNY';
+  // 获取原始事件数据（用于槽位等完整信息）
+  const fullEvent = useMemo(() => {
+    // 从 availableEvents 中找到原始事件
+    const allEvents = EventSystem.getAvailableFixedEvents(state);
+    return allEvents.find(e => e.id === viewModel.meta._rawEventId);
+  }, [state, viewModel.meta._rawEventId]);
   
-  // 检查是否可执行
-  const canExecute = actionPoints >= apCost;
-  const hasSufficientMoney = moneyCost === 0 || (
-    moneyCurrency === 'CNY' 
-      ? state.character.resources.money.cny >= moneyCost
-      : state.character.resources.money.usd >= moneyCost
-  );
-  const isExecutable = canExecute && hasSufficientMoney;
-
-  // 获取槽位匹配的道具
-  const getMatchingItems = useCallback((slot: ItemSlot) => {
-    return ItemSystem.getMatchingItems(state, slot);
-  }, [state]);
-
   // 处理槽位选择
   const handleSlotSelect = useCallback((slotId: string, itemId: string) => {
     setSlotSelections(prev => ({ ...prev, [slotId]: itemId }));
@@ -79,14 +65,14 @@ const EventCard = React.memo(function EventCard({
   // 处理执行
   const handleExecute = useCallback(() => {
     if (!selectedChoiceId) return;
-    onExecute(event.id, selectedChoiceId, slotSelections);
+    onExecute(viewModel.meta._rawEventId, selectedChoiceId, slotSelections);
     setSelectedChoiceId(null);
     setSlotSelections({});
-  }, [event.id, selectedChoiceId, slotSelections, onExecute]);
+  }, [viewModel.meta._rawEventId, selectedChoiceId, slotSelections, onExecute]);
 
   // 渲染槽位选择器
   const renderSlotSelector = (slot: ItemSlot) => {
-    const matchingItems = getMatchingItems(slot);
+    const matchingItems = ItemSystem.getMatchingItems(state, slot);
     const selectedItemId = slotSelections[slot.id];
     
     return (
@@ -122,16 +108,9 @@ const EventCard = React.memo(function EventCard({
     );
   };
 
-  // 检查选项是否可用
-  const isChoiceAvailable = (choice: EventChoice): boolean => {
-    if (!choice.condition) return true;
-    // 简化检查，实际需要根据条件类型判断
-    return true;
-  };
-
   return (
     <Card
-      className={`mb-3 transition-all ${isExecutable ? '' : 'opacity-75'}`}
+      className={`mb-3 transition-all ${viewModel.available ? '' : 'opacity-60'}`}
       header={
         <div 
           className="flex items-center justify-between cursor-pointer"
@@ -141,23 +120,29 @@ const EventCard = React.memo(function EventCard({
           onKeyDown={(e) => e.key === 'Enter' && onToggle()}
         >
           <div className="flex items-center gap-3">
-            <span className="font-medium text-slate-200">{event.name}</span>
-            {event.execution?.repeatable && (
-              <span className="text-xs px-2 py-0.5 bg-slate-700 rounded text-slate-400">
-                可重复
-              </span>
-            )}
+            <span className="text-xl">{viewModel.icon}</span>
+            <div>
+              <span className="font-medium text-slate-200">{viewModel.title}</span>
+              {viewModel.meta.list?.category === 'chain' && (
+                <span className="ml-2 text-xs px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded">
+                  待办
+                </span>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2">
-            {apCost > 0 && (
-              <span className={`text-xs ${canExecute ? 'text-blue-400' : 'text-red-400'}`}>
-                AP: {apCost}
+            {viewModel.cost?.actionPoints !== undefined && (
+              <span className={`text-xs ${viewModel.available ? 'text-blue-400' : 'text-red-400'}`}>
+                AP: {viewModel.cost.actionPoints}
               </span>
             )}
-            {moneyCost > 0 && (
-              <span className={`text-xs ${hasSufficientMoney ? 'text-green-400' : 'text-red-400'}`}>
-                {moneyCurrency === 'CNY' ? '¥' : '$'}{moneyCost}
+            {viewModel.cost?.money !== undefined && viewModel.cost.money > 0 && (
+              <span className={`text-xs ${viewModel.available ? 'text-green-400' : 'text-red-400'}`}>
+                {viewModel.cost.moneyCurrency === 'CNY' ? '¥' : '$'}{viewModel.cost.money}
               </span>
+            )}
+            {!viewModel.available && viewModel.unavailableReason && (
+              <span className="text-xs text-red-400">{viewModel.unavailableReason}</span>
             )}
             <span className="text-slate-500 text-sm">
               {isExpanded ? '▼' : '▶'}
@@ -169,14 +154,14 @@ const EventCard = React.memo(function EventCard({
       {isExpanded && (
         <div className="animate-in fade-in slide-in-from-top-2 duration-200">
           <p className="text-sm text-slate-400 mb-4 leading-relaxed">
-            {event.description}
+            {viewModel.subtitle}
           </p>
 
           {/* 槽位选择 */}
-          {event.slots && event.slots.length > 0 && (
+          {fullEvent?.slots && fullEvent.slots.length > 0 && (
             <div className="mb-4 p-3 bg-slate-900/50 rounded">
               <h4 className="text-sm font-medium text-slate-300 mb-2">所需道具</h4>
-              {event.slots.map(renderSlotSelector)}
+              {fullEvent.slots.map(renderSlotSelector)}
             </div>
           )}
 
@@ -184,20 +169,19 @@ const EventCard = React.memo(function EventCard({
           <div className="space-y-2">
             <h4 className="text-sm font-medium text-slate-300 mb-2">选择行动</h4>
             {choices.map(choice => {
-              const available = isChoiceAvailable(choice);
               const isSelected = selectedChoiceId === choice.id;
               
               return (
                 <button
                   key={choice.id}
-                  onClick={() => available && setSelectedChoiceId(choice.id)}
-                  disabled={!available}
+                  onClick={() => viewModel.available && setSelectedChoiceId(choice.id)}
+                  disabled={!viewModel.available}
                   className={`
                     w-full text-left p-3 rounded border transition-all
                     ${isSelected 
                       ? 'border-blue-500 bg-blue-500/10' 
                       : 'border-slate-700 hover:border-slate-600 bg-slate-900/30'}
-                    ${!available ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                    ${!viewModel.available ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                   `}
                 >
                   <div className="flex items-center justify-between">
@@ -215,12 +199,12 @@ const EventCard = React.memo(function EventCard({
           <div className="mt-4 flex justify-end">
             <Button
               onClick={handleExecute}
-              disabled={!isExecutable || !selectedChoiceId}
+              disabled={!viewModel.available || !selectedChoiceId}
               variant="primary"
               size="sm"
             >
-              {!isExecutable 
-                ? !canExecute ? '行动点不足' : '资金不足'
+              {!viewModel.available 
+                ? viewModel.unavailableReason || '不可用'
                 : !selectedChoiceId 
                   ? '请选择行动' 
                   : '执行'}
@@ -236,20 +220,26 @@ const EventCard = React.memo(function EventCard({
  * 事件面板主组件
  */
 export const EventPanel = React.memo(function EventPanel({
-  availableEvents,
+  mode = 'list',
   onExecuteEvent,
   actionPoints,
 }: EventPanelProps) {
-  const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const state = useGameStore(s => s.state);
 
-  const handleToggle = useCallback((eventId: string) => {
-    setExpandedEventId(prev => prev === eventId ? null : eventId);
+  // 使用 Presenter 获取 ViewModel
+  const viewModels = useMemo(() => {
+    const presenter = EventPresenterFactory.getPresenter(mode);
+    return presenter.present(state);
+  }, [state, mode]);
+
+  const handleToggle = useCallback((id: string) => {
+    setExpandedId(prev => prev === id ? null : id);
   }, []);
 
   // 分类事件
-  const fixedEvents = availableEvents.filter(e => e.category === 'FIXED');
-  const chainEvents = availableEvents.filter(e => e.category === 'CHAIN');
+  const chainEvents = viewModels.filter(vm => vm.meta.list?.category === 'chain');
+  const normalEvents = viewModels.filter(vm => vm.meta.list?.category !== 'chain');
 
   return (
     <div className="h-full flex flex-col">
@@ -271,7 +261,7 @@ export const EventPanel = React.memo(function EventPanel({
 
       {/* 事件列表 */}
       <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-        {availableEvents.length === 0 ? (
+        {viewModels.length === 0 ? (
           <div className="text-center py-8 text-slate-500">
             <p>暂无可用行动</p>
             <p className="text-sm mt-1">结束回合以继续</p>
@@ -282,38 +272,36 @@ export const EventPanel = React.memo(function EventPanel({
             {chainEvents.length > 0 && (
               <div className="mb-4">
                 <h3 className="text-xs font-medium text-amber-400 uppercase tracking-wider mb-2 px-1">
-                  待办事项
+                  待办事项 ({chainEvents.length})
                 </h3>
-                {chainEvents.map(event => (
+                {chainEvents.map(vm => (
                   <EventCard
-                    key={event.id}
-                    event={event}
-                    actionPoints={actionPoints}
+                    key={vm.id}
+                    viewModel={vm}
                     onExecute={onExecuteEvent}
-                    isExpanded={expandedEventId === event.id}
-                    onToggle={() => handleToggle(event.id)}
+                    isExpanded={expandedId === vm.id}
+                    onToggle={() => handleToggle(vm.id)}
                     state={state}
                   />
                 ))}
               </div>
             )}
 
-            {/* 固定事件 */}
-            {fixedEvents.length > 0 && (
+            {/* 普通事件 */}
+            {normalEvents.length > 0 && (
               <div>
                 {chainEvents.length > 0 && (
                   <h3 className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 px-1">
-                    常规行动
+                    常规行动 ({normalEvents.length})
                   </h3>
                 )}
-                {fixedEvents.map(event => (
+                {normalEvents.map(vm => (
                   <EventCard
-                    key={event.id}
-                    event={event}
-                    actionPoints={actionPoints}
+                    key={vm.id}
+                    viewModel={vm}
                     onExecute={onExecuteEvent}
-                    isExpanded={expandedEventId === event.id}
-                    onToggle={() => handleToggle(event.id)}
+                    isExpanded={expandedId === vm.id}
+                    onToggle={() => handleToggle(vm.id)}
                     state={state}
                   />
                 ))}

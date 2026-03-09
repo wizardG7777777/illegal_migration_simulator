@@ -133,6 +133,263 @@
         }
       ],
       "tags": ["policy", "pressure"]
+    },
+    {
+      "id": "act3_john_family_pickup",
+      "category": "FIXED",
+      "name": "约翰的「顺路」服务",
+      "description": "你跟卡车司机约翰聊起家事，提到还有家人困在墨西哥那边。约翰咧嘴一笑：「我也有家人在那边，跑这条线多年了。只要你出路费，我下趟去墨西哥可以帮你把人接过来。」",
+      "scenes": ["act3"],
+      "execution": {
+        "repeatable": false,
+        "actionPointCost": 1
+      },
+      "choices": [
+        {
+          "id": "pay_pickup",
+          "name": "给$800油费，让他接人",
+          "condition": {
+            "type": "ATTRIBUTE",
+            "attribute": "social",
+            "operator": ">=",
+            "value": 12
+          },
+          "effects": {
+            "resources": {
+              "money": -800,
+              "moneyCurrency": "USD",
+              "mental": 5
+            },
+            "setFlags": {
+              "john_family_pickup": true,
+              "family_reunited": false
+            },
+            "narrative": "约翰拍了拍你的肩膀：「放心，包在我身上。一周后的这个点，你在家等着。」你把钱交给他，心里既期待又忐忑。"
+          }
+        },
+        {
+          "id": "haggle",
+          "name": "砍价到$500",
+          "condition": {
+            "type": "ATTRIBUTE",
+            "attribute": "social",
+            "operator": ">=",
+            "value": 15
+          },
+          "effects": {
+            "resources": {
+              "money": -500,
+              "moneyCurrency": "USD",
+              "mental": 3
+            },
+            "setFlags": {
+              "john_family_pickup_cheap": true,
+              "family_reunited": false
+            },
+            "narrative": "约翰挠挠头：「行吧，看在咱们聊得来的份上，500就500。但要是路上出啥岔子，你可别赖我。」"
+          }
+        },
+        {
+          "id": "decline",
+          "name": "算了，太危险",
+          "effects": {
+            "narrative": "你摇摇头。约翰耸耸肩：「随你。这活确实有风险，边境那边现在查得紧。」"
+          }
+        }
+      ],
+      "tags": ["driver", "transport", "social", "family"]
+    },
+    {
+      "id": "act3_john_smuggling",
+      "category": "FIXED",
+      "name": "约翰的「带货」服务",
+      "description": "你听说约翰的卡车经常往返墨西哥，想托他带点「特产」——其实是从中国走私来的电子设备，在这边能卖好价钱。",
+      "scenes": ["act3"],
+      "execution": {
+        "repeatable": true,
+        "maxExecutions": 5,
+        "actionPointCost": 1
+      },
+      "choices": [
+        {
+          "id": "small_batch",
+          "name": "小批试试，给$300油费",
+          "effects": {
+            "resources": {
+              "money": -300,
+              "moneyCurrency": "USD",
+              "mental": -2
+            },
+            "setFlags": {
+              "john_smuggling_small": true
+            },
+            "narrative": "约翰点点头：「小批量的好办，塞在工具箱底下，一般没人查。但说好了，要是被抓住，我不认识你。」"
+          }
+        },
+        {
+          "id": "large_batch",
+          "name": "大批，给$800，赚大头",
+          "condition": {
+            "type": "ATTRIBUTE",
+            "attribute": "riskAwareness",
+            "operator": ">=",
+            "value": 10
+          },
+          "effects": {
+            "resources": {
+              "money": -800,
+              "moneyCurrency": "USD",
+              "mental": -5
+            },
+            "setFlags": {
+              "john_smuggling_large": true
+            },
+            "narrative": "约翰眼睛一亮，随即压低声音：「大批量的风险大，得藏在我特制的夹层里。不过利润也高...如果被查到，咱俩都得完蛋。」"
+          }
+        },
+        {
+          "id": "not_worth",
+          "name": "算了，风险太大",
+          "effects": {
+            "narrative": "你打消了这个念头。约翰也没再说什么，只是递给你一支烟。"
+          }
+        }
+      ],
+      "tags": ["driver", "transport", "smuggling", "risk"]
+    },
+    {
+      "id": "act3_zhang_consult",
+      "category": "FIXED",
+      "name": "咨询张律师",
+      "description": "你来到张律师的办公室。这是一间狭小的房间，墙上挂着他从国内带来的律师执照。张律师推了推眼镜：「我在这边执业五年了，专门帮同胞解决身份问题。你想了解什么？」",
+      "scenes": ["act3"],
+      "execution": {
+        "repeatable": true,
+        "maxExecutions": 5,
+        "actionPointCost": 1
+      },
+      "tags": ["lawyer", "legal", "immigration", "asylum", "zhang"],
+      "choices": [
+        {
+          "id": "ask_asylum",
+          "name": "询问庇护申请流程",
+          "effects": {
+            "resources": {
+              "mental": 2
+            },
+            "narrative": "张律师拿出一张纸，在上面画着流程图：「首先，你要在入境一年内提交I-589表格。然后等面试通知，这个过程可能要几个月到几年不等。关键是你要证明自己的情况符合庇护条件——种族、宗教、国籍、特定社会团体成员或政治观点。」"
+          }
+        },
+        {
+          "id": "ask_cost",
+          "name": "问律师费多少钱",
+          "effects": {
+            "resources": {
+              "mental": -1
+            },
+            "narrative": "张律师沉吟了一下：「全套服务$3000起，包括表格填写、材料准备、面试辅导。如果案子复杂，可能要$5000。我知道这对你不是小数目，但DIY的风险很大，一个填错可能就前功尽弃。」"
+          }
+        },
+        {
+          "id": "ask_success_rate",
+          "name": "问成功率有多少",
+          "effects": {
+            "resources": {
+              "mental": 1
+            },
+            "narrative": "张律师叹了口气：「实话实说，中国庇护申请的通过率不高，大概20%左右。但如果有充分的证据和合理的叙事，成功率会高很多。我经手的案子，准备充分的，通过率能到60%。」"
+          }
+        },
+        {
+          "id": "say_think_about_it",
+          "name": "我再考虑考虑（结束对话）",
+          "effects": {
+            "narrative": "",
+            "endWithPlayer": true
+          }
+        },
+        {
+          "id": "ask_recommendation",
+          "name": "你能推荐其他办法吗？",
+          "condition": {
+            "type": "ATTRIBUTE",
+            "attribute": "intelligence",
+            "operator": ">=",
+            "value": 12
+          },
+          "effects": {
+            "resources": {
+              "mental": 3
+            },
+            "narrative": "张律师压低声音：「除了庇护，还有几种途径。如果你有特殊技能，可以考虑NIW国家利益豁免。如果有钱投资，EB-5也是条路。还有一种...假结婚。我不做这个，但我知道有人做。价格$15000，风险你自己承担。」"
+          }
+        },
+        {
+          "id": "decide_hire",
+          "name": "我决定委托你办理",
+          "condition": {
+            "type": "FLAG",
+            "flag": "zhang_consulted"
+          },
+          "effects": {
+            "resources": {
+              "money": -3000,
+              "moneyCurrency": "USD",
+              "mental": 5
+            },
+            "setFlags": {
+              "zhang_hired": true
+            },
+            "narrative": "张律师露出职业性的微笑，从抽屉里拿出一份合同：「好，那我们正式开始。这是委托协议，你看一下条款。签完字付50%定金，我们开始准备材料。」"
+          }
+        }
+      ]
+    },
+    {
+      "id": "act3_zhang_asylum_prep",
+      "category": "CHAIN",
+      "name": "庇护材料准备（I）",
+      "description": "张律师通知你第一次会面，准备开始收集庇护申请材料。他让你带上所有能证明你身份和情况的文件。",
+      "scenes": ["act3"],
+      "execution": {
+        "repeatable": false,
+        "actionPointCost": 2
+      },
+      "chain": {
+        "chainId": "asylum_application",
+        "stepIndex": 0,
+        "nextEventId": "act3_zhang_asylum_interview_prep",
+        "unlockDelay": 3
+      },
+      "choices": [
+        {
+          "id": "prepare_documents",
+          "name": "认真准备材料",
+          "effects": {
+            "resources": {
+              "mental": -2
+            },
+            "setFlags": {
+              "asylum_docs_prepared": true
+            },
+            "narrative": "你花了一整晚整理材料：身份证复印件、家里的照片、社交媒体截图...张律师审阅后点点头：「这些很好，但还需要补充一些细节。我会帮你润色陈述书。」"
+          }
+        },
+        {
+          "id": "vague_story",
+          "name": "随便编个故事",
+          "effects": {
+            "resources": {
+              "mental": -5
+            },
+            "setFlags": {
+              "asylum_weak_case": true
+            },
+            "narrative": "张律师看完你的材料，眉头紧锁：「这个故事漏洞太多了。移民官见多了假案子，这种水平的陈述肯定被拒。我建议你重新考虑，或者...换个思路。」"
+          }
+        }
+      ],
+      "tags": ["lawyer", "zhang", "asylum", "chain"]
     }
   ]
 }

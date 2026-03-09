@@ -14,6 +14,8 @@ import type { InventoryData } from './item';
 
 import type { ActiveChain } from './event';
 
+import type { NPCSystemState } from './npc';
+
 import type {
   SceneId,
   Act1State,
@@ -141,6 +143,8 @@ export interface GameState {
   event: EventRuntimeData;
   /** 全局状态（跨场景保留） */
   global: GlobalData;
+  /** NPC系统状态 */
+  npcSystem: NPCSystemState;
 }
 
 /**
