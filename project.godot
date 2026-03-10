@@ -18,9 +18,15 @@ config/icon="res://icon.svg"
 
 [display]
 
-window/size/viewport_width=640
-window/size/viewport_height=360
+window/size/viewport_height=850
+window/size/window_width_override=1400.0
+window/size/window_height_override=900.0
 window/stretch/mode="canvas_items"
+window/stretch/scale=5.0
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/godot_mcp/plugin.cfg")
 
 [physics]
 

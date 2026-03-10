@@ -1,0 +1,86 @@
+[gd_scene format=3 uid="uid://cin50p2f411y2"]
+
+[ext_resource type="Texture2D" uid="uid://cdakgai86jk5u" path="res://assets/furniture/interior_furniture_2d.png" id="3_furniture"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bed"]
+size = Vector2(48, 32.00003)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wardrobe"]
+size = Vector2(48, 48)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_table"]
+size = Vector2(27, 50)
+
+[node name="Room" type="Node2D" unique_id=1139991812]
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=999999999]
+position = Vector2(320, 180)
+anchor_mode = 1
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1129563347]
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 640.0
+offset_bottom = 360.0
+accessibility_name = "Floor"
+color = Color(0.16489238, 0.16590488, 0.15882266, 1)
+
+[node name="Furniture" type="Node2D" parent="." unique_id=1869328029]
+
+[node name="Chair" type="StaticBody2D" parent="Furniture" unique_id=485996965]
+position = Vector2(150, 200)
+rotation = 1.5708
+
+[node name="Sprite2D" type="Sprite2D" parent="Furniture/Chair" unique_id=2084669554]
+position = Vector2(-39.999847, 44.00015)
+rotation = -1.5707964
+scale = Vector2(2, 2)
+texture = ExtResource("3_furniture")
+region_enabled = true
+region_rect = Rect2(65, 46, 13, 22)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Furniture/Chair" unique_id=219266336]
+position = Vector2(-39.999855, 40.000145)
+shape = SubResource("RectangleShape2D_bed")
+
+[node name="Bed" type="StaticBody2D" parent="Furniture" unique_id=1732351288]
+position = Vector2(80, 280)
+rotation = 1.5708
+
+[node name="Sprite2D" type="Sprite2D" parent="Furniture/Bed" unique_id=1319206182]
+position = Vector2(-39.999847, 44.00015)
+rotation = -1.5707964
+scale = Vector2(2, 2)
+texture = ExtResource("3_furniture")
+region_enabled = true
+region_rect = Rect2(0, 115, 32, 50)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Furniture/Bed" unique_id=1937328481]
+position = Vector2(-30, 28.00013)
+shape = SubResource("RectangleShape2D_bed")
+
+[node name="Wardrobe" type="StaticBody2D" parent="Furniture" unique_id=852676035]
+position = Vector2(80, 80)
+
+[node name="Sprite2D" type="Sprite2D" parent="Furniture/Wardrobe" unique_id=2015366212]
+scale = Vector2(2.5, 2.5)
+texture = ExtResource("3_furniture")
+region_enabled = true
+region_rect = Rect2(63, 98, 18, 20)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Furniture/Wardrobe" unique_id=346458951]
+shape = SubResource("RectangleShape2D_wardrobe")
+
+[node name="Table" type="StaticBody2D" parent="Furniture" unique_id=602760201]
+position = Vector2(500, 200)
+
+[node name="Sprite2D" type="Sprite2D" parent="Furniture/Table" unique_id=433949957]
+position = Vector2(-266, -24.000004)
+scale = Vector2(2.5, 2.5)
+texture = ExtResource("3_furniture")
+region_enabled = true
+region_rect = Rect2(32, 15, 15, 25)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Furniture/Table" unique_id=346458950]
+position = Vector2(-266, -32)
+shape = SubResource("RectangleShape2D_table")
