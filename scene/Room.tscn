@@ -1,4 +1,4 @@
-[gd_scene format=4 uid="uid://cin50p2f411y2"]
+[gd_scene format=4 uid="uid://4bhi5rkxvg51"]
 
 [ext_resource type="Texture2D" uid="uid://b4f86guoub0ul" path="res://Modern tiles_Free/Interiors_free/32x32/Room_Builder_free_32x32.png" id="1_kunu8"]
 [ext_resource type="Texture2D" uid="uid://cdakgai86jk5u" path="res://assets/furniture/interior_furniture_2d.png" id="3_furniture"]
@@ -269,20 +269,6 @@ size = Vector2(27, 50)
 texture_filter = 1
 tile_map_data = PackedByteArray("AAD9//3/AAAWAAwAAAD9//7/AAAWAA0AAAD9////AAAWAAwAAAD9/wAAAAAWAA0AAAD9/wEAAAAWAAwAAAD9/wIAAAAWAA0AAAACAP3/AAAWAAwAAAACAP7/AAAWAA0AAAACAP//AAAWAAwAAAACAAAAAAAWAA0AAAACAAEAAAAWAAwAAAACAAIAAAAWAA0AAAD9//z/AAAYAAoAAAD+//z/AAAYAAoAAAD///z/AAAYAAoAAAAAAPz/AAAYAAoAAAABAPz/AAAYAAoAAAACAPz/AAAYAAoAAAA=")
 tile_set = SubResource("TileSet_dvyny")
-
-[node name="Walls" type="ColorRect" parent="." unique_id=1528480073]
-offset_left = -74.0
-offset_top = -84.0
-offset_right = 74.0
-offset_bottom = 84.0
-color = Color(0.4, 0.35, 0.3, 1)
-
-[node name="Floor" type="ColorRect" parent="." unique_id=82139694]
-offset_left = -70.0
-offset_top = -80.0
-offset_right = 70.0
-offset_bottom = 80.0
-color = Color(0.2, 0.15, 0.1, 1)
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=999999999]
 

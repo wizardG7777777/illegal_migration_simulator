@@ -12,7 +12,7 @@ config_version=5
 
 config/name="migration_simulator"
 config/description="原《甜甜圈模拟器》，现在扩展到若干更多的润人。"
-run/main_scene="uid://cin50p2f411y2"
+run/main_scene="uid://4bhi5rkxvg51"
 config/features=PackedStringArray("4.6", "Mobile")
 config/icon="res://icon.svg"
 
