@@ -1,11 +1,11 @@
-[gd_scene format=4 uid="uid://cx8c3ogqsa3ut"]
+[gd_scene format=4 uid="uid://dqmxqfpyve8dh"]
 
 [ext_resource type="Texture2D" uid="uid://b4f86guoub0ul" path="res://Modern tiles_Free/Interiors_free/32x32/Room_Builder_free_32x32.png" id="2_mkdon"]
 [ext_resource type="PackedScene" uid="uid://bed001bed001" path="res://scene/furniture/Bed.tscn" id="3_bed"]
 [ext_resource type="PackedScene" uid="uid://chair001chair" path="res://scene/furniture/Chair.tscn" id="4_chair"]
 [ext_resource type="PackedScene" uid="uid://dsn31sc1kgskc" path="res://scene/furniture/Table.tscn" id="5_table"]
 [ext_resource type="PackedScene" uid="uid://cpx4k3h54h3q5" path="res://scene/furniture/Wardrobe.tscn" id="6_wardrobe"]
-[ext_resource type="PackedScene" uid="uid://bxq8jcg78jsg4" path="res://scene/Player.tscn" id="7_player"]
+[ext_resource type="PackedScene" path="res://scene/Player.tscn" id="7_player"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_floor"]
 texture = ExtResource("2_mkdon")
@@ -33,54 +33,34 @@ texture_region_size = Vector2i(32, 32)
 tile_size = Vector2i(32, 32)
 sources/1 = SubResource("TileSetAtlasSource_walls")
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_left_right"]
-size = Vector2(32, 160)
+[node name="Room" type="Node2D"]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_top"]
-size = Vector2(96, 32)
-
-[node name="Room" type="Node2D" unique_id=1535098192]
-
-[node name="Floor" type="TileMapLayer" parent="." unique_id=939144848]
+[node name="Floor" type="TileMapLayer" parent="."]
 texture_filter = 1
 tile_map_data = PackedByteArray("AAD+//7/AQAAAAgAAAD///7/AQAAAAgAAAAAAP7/AQAAAAgAAAD+////AQAAAAgAAAD/////AQAAAAgAAAAAAP//AQAAAAgAAAD+/wAAAQAAAAgAAAD//wAAAQAAAAgAAAAAAAAAAQAAAAgAAAD+/wEAAQAAAAgAAAD//wEAAQAAAAgAAAAAAAEAAQAAAAgAAAA=")
 tile_set = SubResource("TileSet_floor")
 
-[node name="Walls" type="TileMapLayer" parent="." unique_id=1062559424]
+[node name="Walls" type="TileMapLayer" parent="."]
 texture_filter = 1
 tile_map_data = PackedByteArray("AAD9//3/AQAEABEAAAD+//3/AQAEABEAAAD///3/AQAEABEAAAAAAP3/AQAEABEAAAABAP3/AQAEABEAAAD9/wIAAQAMAAIAAAD+/wIAAQAMAAIAAAD//wIAAQAMAAIAAAAAAAIAAQAMAAIAAAABAAIAAQAMAAIAAAD9//7/AQAEABEAAAABAP7/AQAEABEAAAD9////AQAEABEAAAABAP//AQAEABEAAAD9/wAAAQAEABEAAAABAAAAAQAEABEAAAD9/wEAAQAEABEAAAABAAEAAQAEABEAAAA=")
 tile_set = SubResource("TileSet_walls")
 
-[node name="Bed" parent="." unique_id=2045470837 instance=ExtResource("3_bed")]
+[node name="Bed" parent="." instance=ExtResource("3_bed")]
 position = Vector2(-40, 24)
 rotation = 1.5708
 
-[node name="Chair" parent="." unique_id=1212014248 instance=ExtResource("4_chair")]
+[node name="Chair" parent="." instance=ExtResource("4_chair")]
 position = Vector2(-24, -40)
 rotation = 1.5708
 
-[node name="Table" parent="." unique_id=509956500 instance=ExtResource("5_table")]
+[node name="Table" parent="." instance=ExtResource("5_table")]
 position = Vector2(-48, -32)
 
-[node name="Wardrobe" parent="." unique_id=1506928043 instance=ExtResource("6_wardrobe")]
+[node name="Wardrobe" parent="." instance=ExtResource("6_wardrobe")]
 position = Vector2(8, -48)
 
-[node name="Player" parent="." unique_id=66928661 instance=ExtResource("7_player")]
-z_index = 10
+[node name="Player" parent="." instance=ExtResource("7_player")]
 position = Vector2(16, 16)
+z_index = 10
 
-[node name="Camera2D" type="Camera2D" parent="." unique_id=1659159026]
-
-[node name="WallColliders" type="StaticBody2D" parent="." unique_id=1590905398]
-
-[node name="LeftWall" type="CollisionShape2D" parent="WallColliders" unique_id=574292221]
-position = Vector2(-80, -16)
-shape = SubResource("RectangleShape2D_left_right")
-
-[node name="RightWall" type="CollisionShape2D" parent="WallColliders" unique_id=653928841]
-position = Vector2(48, -16)
-shape = SubResource("RectangleShape2D_left_right")
-
-[node name="TopWall" type="CollisionShape2D" parent="WallColliders" unique_id=1103460537]
-position = Vector2(-16, -80)
-shape = SubResource("RectangleShape2D_top")
+[node name="Camera2D" type="Camera2D" parent="."]

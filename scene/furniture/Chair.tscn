@@ -1,0 +1,28 @@
+[gd_scene format=4 uid="uid://chair001chair"]
+
+[ext_resource type="Texture2D" uid="uid://cdakgai86jk5u" path="res://assets/furniture/interior_furniture_2d.png" id="1_furniture"]
+[ext_resource type="Script" path="res://scene/furniture/chair.gd" id="1_script"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_chair"]
+size = Vector2(40, 24)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_interact"]
+radius = 40.0
+
+[node name="Chair" type="StaticBody2D"]
+script = ExtResource("1_script")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+rotation = -1.5707964
+scale = Vector2(2, 2)
+texture = ExtResource("1_furniture")
+region_enabled = true
+region_rect = Rect2(65, 46, 13, 22)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_chair")
+
+[node name="InteractArea" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractArea"]
+shape = SubResource("CircleShape2D_interact")

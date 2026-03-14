@@ -1,0 +1,17 @@
+[gd_scene format=4 uid="uid://walls001walls001"]
+
+[ext_resource type="Texture2D" uid="uid://b4f86guoub0ul" path="res://Modern tiles_Free/Interiors_free/32x32/Room_Builder_free_32x32.png" id="1_tiles"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_walls"]
+texture = ExtResource("1_tiles")
+texture_region_size = Vector2i(32, 32)
+12:1/0 = 0
+12:2/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_walls"]
+tile_size = Vector2i(32, 32)
+sources/1 = SubResource("TileSetAtlasSource_walls")
+
+[node name="Walls" type="TileMapLayer"]
+texture_filter = 1
+tile_set = SubResource("TileSet_walls")

@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://bxq8jcg78jsg4"]
+
+[ext_resource type="Script" uid="uid://b44hsnpp4gpg8" path="res://scene/player.gd" id="1_script"]
+[ext_resource type="SpriteFrames" uid="uid://dxislrl8g6bq5" path="res://scene/PlayerSpriteFrames.tres" id="2_spriteframes"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
+size = Vector2(8, 4)
+
+[node name="Player" type="CharacterBody2D" unique_id=153223349]
+script = ExtResource("1_script")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=229949754]
+position = Vector2(0, -16)
+scale = Vector2(2, 2)
+sprite_frames = ExtResource("2_spriteframes")
+animation = &"sit_left"
+autoplay = "idle_side"
+frame = 4
+frame_progress = 0.644662
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1430456139]
+position = Vector2(0, -2)
+shape = SubResource("RectangleShape2D_player")
+
+[node name="InteractionLabel" type="Label" parent="." unique_id=1555814451]
+visible = false
+offset_left = -50.0
+offset_top = -60.0
+offset_right = 50.0
+offset_bottom = -37.0
+text = "Press F to sit"
+horizontal_alignment = 1
+vertical_alignment = 1

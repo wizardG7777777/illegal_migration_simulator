@@ -1,342 +1,59 @@
-[gd_scene format=4 uid="uid://cin50p2f411y2"]
+[gd_scene format=4]
 
-[ext_resource type="Texture2D" uid="uid://b4f86guoub0ul" path="res://Modern tiles_Free/Interiors_free/32x32/Room_Builder_free_32x32.png" id="1_kunu8"]
-[ext_resource type="Texture2D" uid="uid://cdakgai86jk5u" path="res://assets/furniture/interior_furniture_2d.png" id="3_furniture"]
+[ext_resource type="PackedScene" path="res://scene/environment/Floor.tscn" id="1_floor"]
+[ext_resource type="Texture2D" path="res://Modern tiles_Free/Interiors_free/32x32/Room_Builder_free_32x32.png" id="2_mkdon"]
+[ext_resource type="PackedScene" path="res://scene/environment/Walls.tscn" id="2_walls"]
+[ext_resource type="PackedScene" path="res://scene/furniture/Bed.tscn" id="3_bed"]
+[ext_resource type="PackedScene" path="res://scene/furniture/Chair.tscn" id="4_chair"]
+[ext_resource type="PackedScene" path="res://scene/furniture/Table.tscn" id="5_table"]
+[ext_resource type="PackedScene" path="res://scene/furniture/Wardrobe.tscn" id="6_wardrobe"]
 
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_48osl"]
-texture = ExtResource("1_kunu8")
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_floor"]
+texture = ExtResource("2_mkdon")
 texture_region_size = Vector2i(32, 32)
-3:0/0 = 0
-4:0/0 = 0
-5:0/0 = 0
-6:0/0 = 0
-7:0/0 = 0
-8:0/0 = 0
-12:0/0 = 0
-14:0/0 = 0
-15:0/0 = 0
-16:0/0 = 0
-0:1/0 = 0
-1:1/0 = 0
-2:1/0 = 0
-3:1/0 = 0
-4:1/0 = 0
-5:1/0 = 0
-6:1/0 = 0
-7:1/0 = 0
-8:1/0 = 0
-9:1/0 = 0
-10:1/0 = 0
-11:1/0 = 0
-13:1/0 = 0
-15:1/0 = 0
-16:1/0 = 0
-0:2/0 = 0
-1:2/0 = 0
-2:2/0 = 0
-3:2/0 = 0
-4:2/0 = 0
-5:2/0 = 0
-6:2/0 = 0
-7:2/0 = 0
-8:2/0 = 0
-9:2/0 = 0
-11:2/0 = 0
-13:2/0 = 0
-14:2/0 = 0
-15:2/0 = 0
-16:2/0 = 0
-0:3/0 = 0
-1:3/0 = 0
-2:3/0 = 0
-3:3/0 = 0
-7:3/0 = 0
-8:3/0 = 0
-9:3/0 = 0
-11:3/0 = 0
-12:3/0 = 0
-13:3/0 = 0
-14:3/0 = 0
-15:3/0 = 0
-16:3/0 = 0
-0:5/0 = 0
-1:5/0 = 0
-2:5/0 = 0
-3:5/0 = 0
-4:5/0 = 0
-5:5/0 = 0
-6:5/0 = 0
-7:5/0 = 0
-8:5/0 = 0
-9:5/0 = 0
-11:5/0 = 0
-12:5/0 = 0
-13:5/0 = 0
-14:5/0 = 0
-15:5/0 = 0
-16:5/0 = 0
-0:6/0 = 0
-1:6/0 = 0
-2:6/0 = 0
-3:6/0 = 0
-7:6/0 = 0
-8:6/0 = 0
-9:6/0 = 0
-11:6/0 = 0
-12:6/0 = 0
-13:6/0 = 0
-14:6/0 = 0
-15:6/0 = 0
-16:6/0 = 0
-0:7/0 = 0
-1:7/0 = 0
-2:7/0 = 0
-3:7/0 = 0
-4:7/0 = 0
-5:7/0 = 0
-6:7/0 = 0
-7:7/0 = 0
-8:7/0 = 0
-9:7/0 = 0
-11:7/0 = 0
-12:7/0 = 0
-13:7/0 = 0
-14:7/0 = 0
-15:7/0 = 0
-16:7/0 = 0
 0:8/0 = 0
 1:8/0 = 0
 2:8/0 = 0
 3:8/0 = 0
-7:8/0 = 0
-8:8/0 = 0
-9:8/0 = 0
-11:8/0 = 0
-12:8/0 = 0
-13:8/0 = 0
-14:8/0 = 0
-15:8/0 = 0
-16:8/0 = 0
-0:9/0 = 0
-1:9/0 = 0
-2:9/0 = 0
-3:9/0 = 0
-4:9/0 = 0
-5:9/0 = 0
-6:9/0 = 0
-7:9/0 = 0
-8:9/0 = 0
-9:9/0 = 0
-11:9/0 = 0
-12:9/0 = 0
-13:9/0 = 0
-14:9/0 = 0
-15:9/0 = 0
-16:9/0 = 0
-0:10/0 = 0
-1:10/0 = 0
-2:10/0 = 0
-3:10/0 = 0
-7:10/0 = 0
-8:10/0 = 0
-9:10/0 = 0
-11:10/0 = 0
-12:10/0 = 0
-13:10/0 = 0
-14:10/0 = 0
-15:10/0 = 0
-16:10/0 = 0
-0:11/0 = 0
-1:11/0 = 0
-2:11/0 = 0
-3:11/0 = 0
-4:11/0 = 0
-5:11/0 = 0
-6:11/0 = 0
-7:11/0 = 0
-8:11/0 = 0
-9:11/0 = 0
-11:11/0 = 0
-12:11/0 = 0
-13:11/0 = 0
-14:11/0 = 0
-15:11/0 = 0
-16:11/0 = 0
-0:12/0 = 0
-1:12/0 = 0
-2:12/0 = 0
-3:12/0 = 0
-7:12/0 = 0
-8:12/0 = 0
-9:12/0 = 0
-11:12/0 = 0
-12:12/0 = 0
-13:12/0 = 0
-14:12/0 = 0
-15:12/0 = 0
-16:12/0 = 0
-0:13/0 = 0
-1:13/0 = 0
-2:13/0 = 0
-3:13/0 = 0
-4:13/0 = 0
-5:13/0 = 0
-6:13/0 = 0
-7:13/0 = 0
-8:13/0 = 0
-9:13/0 = 0
-11:13/0 = 0
-12:13/0 = 0
-13:13/0 = 0
-0:14/0 = 0
-1:14/0 = 0
-2:14/0 = 0
-3:14/0 = 0
-7:14/0 = 0
-8:14/0 = 0
-9:14/0 = 0
-11:14/0 = 0
-12:14/0 = 0
-13:14/0 = 0
-0:15/0 = 0
-1:15/0 = 0
-2:15/0 = 0
-3:15/0 = 0
-4:15/0 = 0
-5:15/0 = 0
-6:15/0 = 0
-7:15/0 = 0
-8:15/0 = 0
-9:15/0 = 0
-0:16/0 = 0
-1:16/0 = 0
-2:16/0 = 0
-3:16/0 = 0
-7:16/0 = 0
-8:16/0 = 0
-9:16/0 = 0
-0:17/0 = 0
-1:17/0 = 0
-2:17/0 = 0
-3:17/0 = 0
-4:17/0 = 0
-5:17/0 = 0
-6:17/0 = 0
-7:17/0 = 0
-8:17/0 = 0
-9:17/0 = 0
-0:18/0 = 0
-1:18/0 = 0
-2:18/0 = 0
-3:18/0 = 0
-7:18/0 = 0
-8:18/0 = 0
-9:18/0 = 0
-0:19/0 = 0
-1:19/0 = 0
-2:19/0 = 0
-3:19/0 = 0
-4:19/0 = 0
-5:19/0 = 0
-6:19/0 = 0
-7:19/0 = 0
-8:19/0 = 0
-9:19/0 = 0
-0:20/0 = 0
-1:20/0 = 0
-2:20/0 = 0
-3:20/0 = 0
-7:20/0 = 0
-8:20/0 = 0
-9:20/0 = 0
 
-[sub_resource type="TileSet" id="TileSet_dvyny"]
+[sub_resource type="TileSet" id="TileSet_floor"]
 tile_size = Vector2i(32, 32)
-sources/2 = SubResource("TileSetAtlasSource_48osl")
+sources/1 = SubResource("TileSetAtlasSource_floor")
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_bed"]
-size = Vector2(60, 32.000046)
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_walls"]
+texture = ExtResource("2_mkdon")
+texture_region_size = Vector2i(32, 32)
+12:1/0 = 0
+12:2/0 = 0
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_wardrobe"]
-size = Vector2(48, 48)
+[sub_resource type="TileSet" id="TileSet_walls"]
+tile_size = Vector2i(32, 32)
+sources/1 = SubResource("TileSetAtlasSource_walls")
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_table"]
-size = Vector2(27, 50)
+[node name="Room" type="Node2D" unique_id=1737047102]
 
-[node name="Room" type="Node2D" unique_id=1139991812]
-
-[node name="TileMapLayer" type="TileMapLayer" parent="." unique_id=696578758]
+[node name="Floor" type="TileMapLayer" parent="." unique_id=774685955 instance=ExtResource("1_floor")]
 texture_filter = 1
-tile_map_data = PackedByteArray("AAD9//3/AAAWAAwAAAD9//7/AAAWAA0AAAD9////AAAWAAwAAAD9/wAAAAAWAA0AAAD9/wEAAAAWAAwAAAD9/wIAAAAWAA0AAAACAP3/AAAWAAwAAAACAP7/AAAWAA0AAAACAP//AAAWAAwAAAACAAAAAAAWAA0AAAACAAEAAAAWAAwAAAACAAIAAAAWAA0AAAD9//z/AAAYAAoAAAD+//z/AAAYAAoAAAD///z/AAAYAAoAAAAAAPz/AAAYAAoAAAABAPz/AAAYAAoAAAACAPz/AAAYAAoAAAA=")
-tile_set = SubResource("TileSet_dvyny")
+tile_map_data = PackedByteArray("AAD+//7/AQAAAAgAAAD///7/AQAAAAgAAAAAAP7/AQAAAAgAAAD+////AQAAAAgAAAD/////AQAAAAgAAAAAAP//AQAAAAgAAAD+/wAAAQAAAAgAAAD//wAAAQAAAAgAAAAAAAAAAQAAAAgAAAD+/wEAAQAAAAgAAAD//wEAAQAAAAgAAAAAAAEAAQAAAAgAAAA=")
+tile_set = SubResource("TileSet_floor")
 
-[node name="Walls" type="ColorRect" parent="." unique_id=1528480073]
-offset_left = -74.0
-offset_top = -84.0
-offset_right = 74.0
-offset_bottom = 84.0
-color = Color(0.4, 0.35, 0.3, 1)
+[node name="Walls" type="TileMapLayer" parent="." unique_id=259851203 instance=ExtResource("2_walls")]
+texture_filter = 1
+tile_map_data = PackedByteArray("AAD9//3/AQAMAAEAAAD+//3/AQAMAAEAAAD///3/AQAMAAEAAAAAAP3/AQAMAAEAAAABAP3/AQAMAAEAAAD9/wIAAQAMAAIAAAD+/wIAAQABAAcAAAD//wIAAQACAAcAAAAAAAIAAQAAAAcAAAABAAIAAQAMAAIAAAD9//7/AQAMAAIAAAABAP7/AQAMAAIAAAD9////AQAMAAIAAAABAP//AQAMAAIAAAD9/wAAAQAMAAIAAAABAAAAAQAMAAIAAAD9/wEAAQAMAAIAAAABAAEAAQAMAAIAAAA=")
+tile_set = SubResource("TileSet_walls")
 
-[node name="Floor" type="ColorRect" parent="." unique_id=82139694]
-offset_left = -70.0
-offset_top = -80.0
-offset_right = 70.0
-offset_bottom = 80.0
-color = Color(0.2, 0.15, 0.1, 1)
-
-[node name="Camera2D" type="Camera2D" parent="." unique_id=999999999]
-
-[node name="Furniture" type="Node2D" parent="." unique_id=1869328029]
-position = Vector2(-70, -80)
-
-[node name="Chair" type="StaticBody2D" parent="Furniture" unique_id=485996965]
-position = Vector2(40, 24)
+[node name="Bed" type="StaticBody2D" parent="." unique_id=813239474 instance=ExtResource("3_bed")]
+position = Vector2(-48, 24)
 rotation = 1.5708
 
-[node name="Sprite2D" type="Sprite2D" parent="Furniture/Chair" unique_id=2084669554]
-rotation = -1.5707964
-scale = Vector2(2, 2)
-texture = ExtResource("3_furniture")
-region_enabled = true
-region_rect = Rect2(65, 46, 13, 22)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Furniture/Chair" unique_id=219266336]
-shape = SubResource("RectangleShape2D_bed")
-
-[node name="Bed" type="StaticBody2D" parent="Furniture" unique_id=1732351288]
-position = Vector2(16, 80)
+[node name="Chair" type="StaticBody2D" parent="." unique_id=114854412 instance=ExtResource("4_chair")]
+position = Vector2(-24, -40)
 rotation = 1.5708
 
-[node name="Sprite2D" type="Sprite2D" parent="Furniture/Bed" unique_id=1319206182]
-rotation = -1.5707964
-scale = Vector2(2.0833519, 2)
-texture = ExtResource("3_furniture")
-region_enabled = true
-region_rect = Rect2(14, 127, 19, 35)
+[node name="Table" type="StaticBody2D" parent="." unique_id=1194993335 instance=ExtResource("5_table")]
+position = Vector2(-48, -32)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Furniture/Bed" unique_id=1937328481]
-shape = SubResource("RectangleShape2D_bed")
+[node name="Wardrobe" type="StaticBody2D" parent="." unique_id=2142590668 instance=ExtResource("6_wardrobe")]
+position = Vector2(16, -48)
 
-[node name="Wardrobe" type="StaticBody2D" parent="Furniture" unique_id=852676035]
-position = Vector2(80, 16)
-
-[node name="Sprite2D" type="Sprite2D" parent="Furniture/Wardrobe" unique_id=2015366212]
-scale = Vector2(2.5, 2.5)
-texture = ExtResource("3_furniture")
-region_enabled = true
-region_rect = Rect2(63, 98, 18, 20)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Furniture/Wardrobe" unique_id=346458951]
-shape = SubResource("RectangleShape2D_wardrobe")
-
-[node name="Table" type="StaticBody2D" parent="Furniture" unique_id=602760201]
-position = Vector2(14, 32)
-
-[node name="Sprite2D" type="Sprite2D" parent="Furniture/Table" unique_id=433949957]
-scale = Vector2(2.5, 2.5)
-texture = ExtResource("3_furniture")
-region_enabled = true
-region_rect = Rect2(32, 15, 15, 25)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Furniture/Table" unique_id=346458950]
-shape = SubResource("RectangleShape2D_table")
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1480002589]

@@ -1,0 +1,17 @@
+[gd_scene format=4 uid="uid://wardrobe01wardrobe"]
+
+[ext_resource type="Texture2D" uid="uid://cdakgai86jk5u" path="res://assets/furniture/interior_furniture_2d.png" id="1_furniture"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wardrobe"]
+size = Vector2(48, 48)
+
+[node name="Wardrobe" type="StaticBody2D"]
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(2.5, 2.5)
+texture = ExtResource("1_furniture")
+region_enabled = true
+region_rect = Rect2(63, 98, 18, 20)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_wardrobe")
