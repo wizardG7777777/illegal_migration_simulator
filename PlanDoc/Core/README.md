@@ -25,9 +25,11 @@
 
 ## 技术栈
 
-- **前端**: React + TypeScript + TailwindCSS
-- **存储**: localStorage（主要）+ IndexedDB（预留）
-- **构建**: Vite / Create React App
+> ⚠️ 本项目技术栈经历过迁移。以下文档最初基于 React + TypeScript 编写，当前主分支已迁移至 **Godot 4.6**。核心系统的设计逻辑与数据结构仍然适用，具体实现细节需以 Godot 版本为准。
+
+- **当前引擎**: Godot 4.6（GL Compatibility 渲染器）
+- **脚本语言**: GDScript
+- **历史技术栈**: React + TypeScript + TailwindCSS（见 `React_archived` 分支）
 
 ## 架构设计原则
 
